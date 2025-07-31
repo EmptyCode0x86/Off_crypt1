@@ -1,7 +1,7 @@
 ☕ Support My Work on Ko-fi
 If you find my projects useful or interesting, consider buying me a coffee! Your support helps me keep building and maintaining open-source projects. 🙌
 
-👉 https://ko-fi.com/emptyc0de
+👉 https://ko-fi.com/emptyc0de/tip
 
 Thank you for your support! ❤️
 
@@ -120,6 +120,6 @@ NO LIABILITY: The author shall not be held liable for any damages, losses, or le
 ☕ Support My Work on Ko-fi
 If you find my projects useful or interesting, consider buying me a coffee! Your support helps me keep building and maintaining open-source projects. 🙌
 
-👉 https://ko-fi.com/emptyc0de
+👉 https://ko-fi.com/emptyc0de/tip
 
 Thank you for your support! ❤️

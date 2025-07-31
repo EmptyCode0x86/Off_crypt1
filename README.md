@@ -109,3 +109,6 @@ This software is provided for personal and non-commercial use only. All commerci
 ---
 
 Thank you for exploring OffCrypt! If you like the app or find it useful, please consider supporting the project via the Ko‑fi link above ❤️
+
+> ☕ **Support my work**  
+> If you find my projects useful or interesting, please consider buying me a coffee: [https://ko-fi.com/emptyc0de/tip](https://ko-fi.com/emptyc0de/tip) 🙌

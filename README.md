@@ -7,6 +7,9 @@ OffCrypt is a professional‑grade encryption and messaging application for Andr
 
 ---
 
+## Pictures
+https://imgur.com/a/tbCVtkm
+
 ## 🎯 Key Features
 
 ### 🔒 Encryption Methods
@@ -97,6 +100,9 @@ OffCrypt is a professional‑grade encryption and messaging application for Andr
 - Use the random password generator whenever possible.
 - Back up your RSA keys securely.
 - Rotate your keys periodically.
+
+## Pictures
+https://imgur.com/a/tbCVtkm
 
 ---
 

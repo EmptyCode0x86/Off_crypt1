@@ -1,0 +1,833 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fitsSystemWindows="true"
+    android:padding="16dp"
+    android:background="#2A2A2A">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:fitsSystemWindows="true"
+        android:orientation="vertical"
+        android:gravity="center_horizontal">
+
+        <!-- Title -->
+        <ImageView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:maxHeight="450dp"
+            android:src="@drawable/off_crypt"
+            android:layout_marginBottom="16dp"
+            android:scaleType="centerInside"
+            android:adjustViewBounds="true"
+            android:contentDescription="OffCrypt logo" />
+
+        <!-- INSTRUCTIONS & SECURITY -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            app:cardCornerRadius="8dp"
+            app:cardElevation="4dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="ℹ️ Instructions / security"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:textColor="#ffffff"
+                    android:layout_marginBottom="12dp" />
+
+                <Button
+                    android:id="@+id/buttonShowRSAHelp"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="❓ How does RSA encryption work?"
+                    android:textSize="14sp"
+                    android:textColor="#ffffff"
+                    android:textStyle="bold"
+                    android:backgroundTint="#3498db"
+                    android:padding="12dp"
+                    android:layout_marginBottom="8dp"
+                    android:drawableStart="@android:drawable/arrow_down_float"
+                    android:drawablePadding="8dp" />
+
+                <TextView
+                    android:id="@+id/textViewRSAHelp"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="🔐 **RSA ENCRYPTION USAGE GUIDE:**\n\n📱 **STEP 1 - CREATING YOUR OWN KEY PAIR:**\n→ Press the 'Generate new key pair' button\n→ Your public key will appear on the screen\n→ Copy the public key and share it with the person who will send you messages\n\n📤 **STEP 2 - SENDING A MESSAGE:**\n→ Ask the recipient for their public key\n→ Paste their public key into the 'Recipient&apos;s public key' field\n→ Write a message and press the 'Encrypt message' button\n→ Send the encrypted message to the recipient\n\n📥 **STEP 3 - RECEIVING A MESSAGE:**\n→ When you receive an encrypted message, paste it into the 'Encrypted message' field\n→ Press the 'Decrypt message' button (no password needed!)\n→ The message opens automatically with your private key\n\n🔄 **IN PRACTICE:**\n• Public key = Lock (can be shared with everyone)\n• Private key = Key to the lock (keep it secret!)\n• Everyone has their own key pair\n• You can send messages to anyone whose public key you know\n• Only you can read messages sent to you\n\n🛡️ **SECURITY:**\n✅ No shared password needed\n✅ Even if the public key leaks, messages remain safe\n✅ Each message is individually protected\n✅ Digital signature verifies the sender\n✅ Perfect Forward Secrecy prevents old messages from being cracked\n\n⚠️ **IMPORTANT:**\n• Never share your private key!\n• Back up your key pair in a safe place\n• If you lose your private key, you cannot read old messages\n• Always ensure you use the correct public key"
+                    android:textSize="12sp"
+                    android:textColor="#2c3e50"
+                    android:background="#eeeeee"
+                    android:padding="12dp"
+                    android:layout_marginBottom="8dp"
+                    android:visibility="gone"
+                    android:lineSpacingExtra="3dp"
+                    android:fontFamily="sans-serif-medium" />
+
+                <Button
+                    android:id="@+id/buttonShowSecurityFeatures"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="🔒 Show security features"
+                    android:textSize="14sp"
+                    android:textColor="#ffffff"
+                    android:textStyle="bold"
+                    android:backgroundTint="#27ae60"
+                    android:padding="10dp"
+                    android:layout_marginBottom="8dp"
+                    android:drawableStart="@android:drawable/arrow_down_float"
+                    android:drawablePadding="8dp" />
+
+                <TextView
+                    android:id="@+id/textViewSecurityFeatures"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="🔐 **SECURITY FEATURES:**\n\n✅ **Cryptographic security**\n\n🔑 RSA-2048 — Asymmetric public key cryptography\n\n🔑 RSA-4096 — Asymmetric public key cryptography\n\n🛡️ AES-256-GCM — Symmetric encryption with authentication\n\n🔐 PBKDF2 — Password derivation (100,000 iterations)\n\n🏷️ HmacSHA256 — Ensures message integrity\n\n⚡ SHA-256 — Cryptographic hash function for keys\n\n🎲 SecureRandom — Cryptographically secure random number generator\n\n✅ **Advanced security**\n\n✍️ Digital signature — Ensures message authenticity\n\n🔄 Perfect Forward Secrecy (PFS) — ECDH key exchange\n\n⏰ Expiring messages — Automatic expiration time (1h-1y)\n\n🔥 Burn After Reading — Automatic destruction of messages\n\n🔒 Version Byte — Automatic algorithm detection\n\n✅ **Attack protection**\n\n⚖️ Constant-time HMAC — Prevents timing attacks\n\n🔍 Data validation — Verification of cryptographic structures\n\n❌ Replay attack protection — GCM nonce and metadata\n\n✅ **Memory safety**\n\n🧹 Sensitive data scrubbing — 3x overwrite + zero out\n\n💾 Char/ByteArray wiping — Clearing UTF-8 and memory representations\n\n♻️ Aggressive Garbage Collection — Forced memory cleanup (3x)\n\n📋 Log buffer clearing — Android logcat cleanup\n\n🔄 String pool cleanup — JVM string cache wiping\n\n✅ **UI security**\n\n📋 Secure Clipboard — Automatic clipboard clearing (60s)\n\n🔒 Lifecycle cleanup — Data destroyed when the app closes\n\n⏸️ Background cleanup — Sensitive data cleared when moving to background\n\n🚨 Burn dialog — Warning for self-destructing messages\n\n✅ **Additional features**\n\n🧠 RSA OAEP + SHA-256 + MGF1 — Modern and secure key encryption\n\n📜 RSA signature with SHA-512 — Maximum authenticity assurance\n\n📦 Version Byte detection — Automatic algorithm selection\n\n🔁 Metadata fallback — Old and new format supported\n\n⚙️ Forced GC + Finalization — Enhanced memory release\n\n📤 Encrypted file export — AES-256-GCM protected file format\n\n🔒 Encrypted RSA keystore — AES-encrypted internal storage\n\n📛 AndroidOpenSSL fallback — Key pair generation with different engines\n\n🧪 Signature validation — UI verification of SHA-512 signatures\n\n🕵️ Protected metadata — Message structure contains security elements\n\n📅 Expiration prevention — UI checks automatically\n\n⛔ App lock — 5 failed attempts lock the app\n\n🗑️ **Delete all function**\n\n❗ Complete reset — Deletes all stored data:\n\n- RSA keys (2048 / 4096)\n\n- All passwords and encryption keys\n\n- App settings and caches\n\n- Decrypting old messages is no longer possible\n\n**Total: 36+ active security features** 🛡️"
+                    android:textSize="11sp"
+                    android:textColor="#000000"
+                    android:background="#eeeeee"
+                    android:padding="8dp"
+                    android:layout_marginBottom="8dp"
+                    android:lineSpacingExtra="2dp"
+                    android:fontFamily="sans-serif-medium"
+                    android:visibility="gone" />
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
+        <!-- Encryption type selection -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            app:cardCornerRadius="8dp"
+            app:cardElevation="4dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="12dp"
+                    android:text="⚙️ Choose encryption type"
+                    android:textColor="#ffffff"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
+
+                <RadioGroup
+                    android:id="@+id/radioGroupEncryptionMode"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <RadioButton
+                        android:id="@+id/radioPasswordMode"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:checked="true"
+                        android:text="🔑 Password"
+                        android:textColor="@color/switch_thumb_color"
+                        android:textSize="14sp"
+                        android:textStyle="bold"
+                        app:buttonTint="@color/radio_state_tint" />
+
+                    <RadioButton
+                        android:id="@+id/radioRSAMode"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:layout_weight="1"
+                        android:text="🔐 RSA-2048"
+                        android:textSize="14sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/switch_thumb_color"
+                        app:buttonTint="@color/radio_state_tint" />
+
+                    <RadioButton
+                        android:id="@+id/radioRSA4096Mode"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:layout_weight="1"
+                        android:text="🔐 RSA-4096"
+                        android:textSize="14sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/switch_thumb_color"
+                        app:buttonTint="@color/radio_state_tint" />
+
+                </RadioGroup>
+
+                <!-- Explanatory texts on separate lines -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:orientation="horizontal">
+
+                    <!-- Password explanation -->
+                    <TextView
+                        android:id="@+id/textInfoPassword"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="AES-GCM\nPBKDF2"
+                        android:textColor="#A0A0A0"
+                        android:textSize="10sp"
+                        android:gravity="center"
+                        android:padding="4dp"
+                        android:background="@drawable/info_box_background"
+                        android:lines="2" />
+
+                    <!-- RSA-2048 explanation -->
+                    <TextView
+                        android:id="@+id/textInfoRSA2048"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:layout_marginStart="8dp"
+                        android:text="AES-GCM\nSignature"
+                        android:textColor="#A0A0A0"
+                        android:textSize="10sp"
+                        android:gravity="center"
+                        android:padding="4dp"
+                        android:background="@drawable/info_box_background"
+                        android:lines="2" />
+
+                    <!-- RSA-4096 explanation -->
+                    <TextView
+                        android:id="@+id/textInfoRSA4096"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:layout_marginStart="8dp"
+                        android:text="AES-GCM\nMAXIMUM"
+                        android:textColor="#A0A0A0"
+                        android:textSize="10sp"
+                        android:gravity="center"
+                        android:padding="4dp"
+                        android:background="@drawable/info_box_background"
+                        android:lines="2" />
+                </LinearLayout>
+
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
+        <!-- RSA encryption settings -->
+        <androidx.cardview.widget.CardView
+            android:id="@+id/layoutRSAEncryption"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            android:visibility="gone"
+            app:cardCornerRadius="8dp"
+            app:cardElevation="4dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="🔐 RSA key management"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:textColor="#ffffff"
+                    android:layout_marginBottom="12dp" />
+
+                <!-- RSA-status -->
+                <TextView
+                    android:id="@+id/textViewRSAStatus"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="⚠ No key pair - create a key pair first"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    android:textColor="#f39c12"
+                    android:background="@drawable/info_box_background"
+                    android:padding="8dp"
+                    android:layout_marginBottom="12dp" />
+
+                <Button
+                    android:id="@+id/buttonGenerateKeyPair"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="🔄 Generate new key pair"
+                    android:backgroundTint="#27ae60"
+                    android:textColor="#ffffff"
+                    android:textStyle="bold"
+                    android:textSize="16sp"
+                    android:padding="12dp"
+                    android:layout_marginBottom="16dp" />
+
+                <!-- My public key -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="📤 My public key (share with others):"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:textColor="#ffffff"
+                    android:layout_marginBottom="8dp" />
+
+                <TextView
+                    android:id="@+id/textViewPublicKey"
+                    android:layout_width="match_parent"
+                    android:layout_height="80dp"
+                    android:text="No key generated"
+                    android:background="@drawable/textview_background"
+                    android:padding="8dp"
+                    android:textSize="10sp"
+                    android:textColor="#2c3e50"
+                    android:gravity="top|start"
+                    android:fontFamily="monospace"
+                    android:scrollbars="vertical"
+                    android:scrollbarStyle="insideOverlay"
+                    android:layout_marginBottom="8dp" />
+
+                <Button
+                    android:id="@+id/buttonCopyPublicKey"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="📋 Copy public key"
+                    android:backgroundTint="#3498db"
+                    android:textColor="#ffffff"
+                    android:textStyle="bold"
+                    android:textSize="14sp"
+                    android:padding="10dp"
+                    android:layout_marginBottom="16dp" />
+
+
+                <!-- Recipient's public key -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="📥 Recipient's public key:"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:textColor="#ffffff"
+                    android:layout_marginBottom="8dp" />
+
+                <EditText
+                    android:id="@+id/editTextRecipientPublicKey"
+                    android:layout_width="match_parent"
+                    android:layout_height="80dp"
+                    android:gravity="top|start"
+                    android:hint="Paste the recipient's public key here..."
+                    android:inputType="textMultiLine"
+                    android:background="@drawable/edittext_background"
+                    android:padding="8dp"
+                    android:textSize="14sp"
+                    android:textColor="#000000"
+                    android:textColorHint="#7f8c8d"
+                    android:fontFamily="monospace"
+                    android:scrollbars="vertical"
+                    android:scrollbarStyle="insideOverlay"
+                    android:layout_marginBottom="8dp" />
+
+                <Button
+                    android:id="@+id/buttonImportPublicKey"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="📁 Load key from file"
+                    android:backgroundTint="#8e44ad"
+                    android:textColor="#ffffff"
+                    android:textStyle="bold"
+                    android:textSize="14sp"
+                    android:padding="10dp"
+                    android:layout_marginBottom="16dp" />
+
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
+        <!-- Encryption section -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            app:cardCornerRadius="8dp"
+            app:cardElevation="4dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:fitsSystemWindows="true"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fitsSystemWindows="true"
+                    android:text="📝 Write a message"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:textColor="#ffffff"
+                    android:layout_marginBottom="8dp" />
+
+                <EditText
+                    android:id="@+id/editTextMessage"
+                    android:layout_width="match_parent"
+                    android:layout_height="120dp"
+                    android:hint="Write here the message you want to encrypt..."
+                    android:gravity="top|start"
+                    android:inputType="textMultiLine"
+                    android:background="@drawable/edittext_background"
+                    android:padding="12dp"
+                    android:textSize="14sp"
+                    android:textColor="#000000"
+                    android:textColorHint="#7f8c8d"
+                    android:layout_marginBottom="16dp"
+                    android:scrollbars="vertical"
+                    android:scrollbarStyle="insideOverlay"
+                    android:overScrollMode="always"
+                    android:scrollbarAlwaysDrawVerticalTrack="true" />
+
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="⚙️ Disappearing messages"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:textColor="#ffffff"
+                    android:layout_marginBottom="8dp" />
+
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="8dp">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="⏰ Message disappears"
+                        android:textColor="#ffffff"
+                        android:textSize="14sp" />
+
+                    <androidx.appcompat.widget.SwitchCompat
+                        android:id="@+id/switchEnableExpiration"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        app:thumbTint="@color/switch_thumb_color"
+                        app:trackTint="@color/switch_track_color" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/layoutExpirationSettings"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:visibility="gone"
+                    android:layout_marginBottom="8dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Select expiration time:"
+                        android:textColor="#ffffff"
+                        android:textSize="14sp"
+                        android:layout_marginBottom="4dp" />
+
+                    <Spinner
+                        android:id="@+id/spinnerExpirationTime"
+                        android:layout_width="match_parent"
+                        android:layout_height="48dp"
+                        android:background="@drawable/edittext_background"
+                        android:padding="12dp"
+                        android:popupBackground="@drawable/edittext_background" />
+                </LinearLayout>
+
+                <!-- Burn after reading -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="12dp">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="🔥 Disappears after reading"
+                        android:textColor="#ffffff"
+                        android:textSize="14sp" />
+
+                    <androidx.appcompat.widget.SwitchCompat
+                        android:id="@+id/switchBurnAfterReading"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        app:thumbTint="@color/switch_thumb_color"
+                        app:trackTint="@color/switch_track_color" />
+                </LinearLayout>
+
+
+                <!-- Password-based encryption settings -->
+                <LinearLayout
+                    android:id="@+id/layoutPasswordEncryption"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginBottom="12dp">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="🔑 Use a random password"
+                            android:textSize="16sp"
+                            android:textStyle="bold"
+                            android:textColor="#ffffff" />
+
+                        <androidx.appcompat.widget.SwitchCompat
+                            android:id="@+id/switchRandomPassword"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:checked="true"
+                            app:thumbTint="@color/switch_thumb_color"
+                            app:trackTint="@color/switch_track_color"
+                            android:layout_marginStart="8dp" />
+
+                    </LinearLayout>
+
+                    <!-- Random password section -->
+                    <LinearLayout
+                        android:id="@+id/layoutRandomPassword"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:layout_marginBottom="16dp">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:layout_marginBottom="8dp">
+
+                            <TextView
+                                android:id="@+id/textViewPassword"
+                                android:layout_width="0dp"
+                                android:layout_height="48dp"
+                                android:layout_weight="1"
+                                android:background="@drawable/textview_background"
+                                android:padding="12dp"
+                                android:textSize="16sp"
+                                android:textStyle="bold"
+                                android:textColor="#2c3e50"
+                                android:gravity="center_vertical"
+                                android:fontFamily="monospace"
+                                android:layout_marginEnd="8dp"
+                                android:text="GENERATE..." />
+
+                            <Button
+                                android:id="@+id/buttonCopyPassword"
+                                android:layout_width="wrap_content"
+                                android:layout_height="48dp"
+                                android:text="Copy"
+                                android:backgroundTint="#f39c12"
+                                android:textColor="#ffffff"
+                                android:textStyle="bold"
+                                android:textSize="14sp"
+                                android:minWidth="60dp"
+                                android:layout_marginEnd="4dp" />
+
+                            <Button
+                                android:id="@+id/buttonGenerateNew"
+                                android:layout_width="wrap_content"
+                                android:layout_height="48dp"
+                                android:text="New"
+                                android:backgroundTint="#27ae60"
+                                android:textColor="#ffffff"
+                                android:textStyle="bold"
+                                android:textSize="14sp"
+                                android:minWidth="60dp" />
+
+                        </LinearLayout>
+
+                    </LinearLayout>
+
+                    <!-- Custom password section -->
+                    <LinearLayout
+                        android:id="@+id/layoutCustomPassword"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:layout_marginBottom="16dp"
+                        android:visibility="gone">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="🔐 Custom password"
+                            android:textSize="16sp"
+                            android:textStyle="bold"
+                            android:textColor="#ffffff"
+                            android:layout_marginBottom="8dp" />
+
+                        <EditText
+                            android:id="@+id/editTextCustomPassword"
+                            android:layout_width="match_parent"
+                            android:layout_height="48dp"
+                            android:hint="Enter a custom password..."
+                            android:inputType="text"
+                            android:background="@drawable/edittext_background"
+                            android:padding="12dp"
+                            android:textSize="16sp"
+                            android:textColor="#000000"
+                            android:textColorHint="#7f8c8d" />
+
+                    </LinearLayout>
+
+                </LinearLayout>
+
+                <Button
+                    android:id="@+id/buttonEncrypt"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:fitsSystemWindows="true"
+                    android:text="🔒 Encrypt message"
+                    android:backgroundTint="#27ae60"
+                    android:textColor="#ffffff"
+                    android:textStyle="bold"
+                    android:textSize="16sp"
+                    android:padding="12dp"
+                    android:layout_marginBottom="8dp" />
+
+                <Button
+                    android:id="@+id/buttonEncryptToFile"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="💾 Create encrypted file"
+                    android:backgroundTint="#16a085"
+                    android:textColor="#ffffff"
+                    android:textStyle="bold"
+                    android:textSize="16sp"
+                    android:padding="12dp"
+                    android:layout_marginBottom="8dp" />
+
+                <Button
+                    android:id="@+id/buttonImportEncryptedFile"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="📁 Import encrypted file for reading"
+                    android:backgroundTint="#8e44ad"
+                    android:textColor="#ffffff"
+                    android:textStyle="bold"
+                    android:textSize="16sp"
+                    android:padding="12dp" />
+
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
+        <!-- Encrypted message section -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:fitsSystemWindows="true"
+            android:layout_marginBottom="16dp"
+            app:cardCornerRadius="8dp"
+            app:cardElevation="4dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:fitsSystemWindows="true"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="📤 Encrypted message /"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:textColor="#ffffff"
+                    android:layout_marginBottom="8dp" />
+
+                <EditText
+                    android:id="@+id/editTextEncrypted"
+                    android:layout_width="match_parent"
+                    android:layout_height="100dp"
+                    android:hint="Encrypted message will appear here... Or paste the received encrypted message here"
+                    android:gravity="top|start"
+                    android:inputType="textMultiLine"
+                    android:background="@drawable/edittext_background"
+                    android:padding="12dp"
+                    android:textSize="12sp"
+                    android:textColor="#000000"
+                    android:textColorHint="#7f8c8d"
+                    android:layout_marginBottom="12dp"
+                    android:scrollbars="vertical"
+                    android:scrollbarStyle="insideOverlay"
+                    android:overScrollMode="always"
+                    android:scrollbarAlwaysDrawVerticalTrack="true" />
+
+                <Button
+                    android:id="@+id/buttonCopy"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="📋 Copy encrypted message"
+                    android:backgroundTint="#3498db"
+                    android:textColor="#ffffff"
+                    android:textStyle="bold"
+                    android:textSize="14sp"
+                    android:padding="10dp" />
+
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
+        <!-- Decryption section -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            app:cardCornerRadius="8dp"
+            app:cardElevation="4dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="🔓 Decrypt message"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:textColor="#ffffff"
+                    android:layout_marginBottom="8dp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="🔑 Enter password (for password encryption only)"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    android:textColor="#ffffff"
+                    android:layout_marginBottom="4dp" />
+
+                <EditText
+                    android:id="@+id/editTextDecryptPassword"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="Paste the password here... (RSA does not require a password!)"
+                    android:inputType="text"
+                    android:background="@drawable/edittext_background"
+                    android:padding="12dp"
+                    android:textSize="16sp"
+                    android:fontFamily="monospace"
+                    android:textColor="#000000"
+                    android:textColorHint="#7f8c8d"
+                    android:layout_marginBottom="12dp" />
+
+                <Button
+                    android:id="@+id/buttonDecrypt"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="16dp"
+                    android:backgroundTint="#f39c12"
+                    android:padding="12dp"
+                    android:text="🔍 Decrypt message"
+                    android:textColor="#ffffff"
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
+
+                <!-- Allekirjoituksen tila -->
+                <TextView
+                    android:id="@+id/textViewSignatureStatus"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text=""
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:background="@drawable/textview_background"
+                    android:padding="8dp"
+                    android:layout_marginBottom="8dp"
+                    android:visibility="gone" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="📖 Decrypted message:"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:textColor="#ffffff"
+                    android:layout_marginBottom="8dp" />
+
+                <TextView
+                    android:id="@+id/textViewDecrypted"
+                    android:layout_width="match_parent"
+                    android:layout_height="100dp"
+                    android:background="@drawable/textview_background"
+                    android:padding="12dp"
+                    android:textSize="14sp"
+                    android:textColor="#000000"
+                    android:gravity="top|start"
+                    android:text=""
+                    android:hint="Decrypted message will appear here..."
+                    android:scrollbars="vertical"
+                    android:scrollbarStyle="insideOverlay"
+                    android:overScrollMode="always"
+                    android:scrollbarAlwaysDrawVerticalTrack="true" />
+
+                <Button
+                    android:id="@+id/buttonCopy1"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="📋 Copy decrypted message"
+                    android:backgroundTint="#3498db"
+                    android:textColor="#ffffff"
+                    android:textStyle="bold"
+                    android:textSize="14sp"
+                    android:padding="10dp" />
+
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
+        <!-- Clear button -->
+        <Button
+            android:id="@+id/buttonClear"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:fitsSystemWindows="true"
+            android:text="🗑️ DELETE ALL DATA"
+            android:backgroundTint="#8B0000"
+            android:textColor="#ffffff"
+            android:textStyle="bold"
+            android:textSize="14sp"
+            android:padding="10dp" />
+
+    </LinearLayout>
+</ScrollView>

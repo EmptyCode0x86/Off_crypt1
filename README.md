@@ -1,3 +1,10 @@
+☕ Support My Work on Ko-fi
+If you find my projects useful or interesting, consider buying me a coffee! Your support helps me keep building and maintaining open-source projects. 🙌
+
+👉 https://ko-fi.com/emptyc0de
+
+Thank you for your support! ❤️
+
 Off_crypt
 
 OffCrypt 🔐 Secure Message Encryption for Android OffCrypt is a professional-grade encryption application for Android devices, designed to provide maximum security for sensitive communications. Built with Kotlin, it combines multiple state-of-the-art cryptographic algorithms and security features to ensure your messages remain private and secure.
@@ -81,7 +88,8 @@ Never share your RSA private key - It's automatically protected, but never expor
 🟡 Important Notes
 
 Encrypted RSA keys: All private keys are encrypted with AES-256-GCM using a master password Forward secrecy: Even if keys are compromised, past messages with PFS remain secure Memory clearing: All sensitive data is securely wiped from memory when possible No network access: App works completely offline - no data leaves your device Version compatibility: Different encryption versions are automatically detected
-LICENSE
+
+### LICENSE ###
 
 Custom License – Non-Commercial Use Only Copyright (c) 2025 OffCrypt
 
@@ -107,3 +115,11 @@ NOT FOR CRITICAL OR EMERGENCY USE: This software is not intended for life-critic
 NO ILLEGAL USE: You may not use this software for illegal, criminal, or malicious purposes. It is your responsibility to comply with all local and international laws applicable to your use of this software.
 
 NO LIABILITY: The author shall not be held liable for any damages, losses, or legal consequences resulting from the use, misuse, or malfunction of this software, including loss of data or messages that cannot be recovered or decrypted.
+
+
+☕ Support My Work on Ko-fi
+If you find my projects useful or interesting, consider buying me a coffee! Your support helps me keep building and maintaining open-source projects. 🙌
+
+👉 https://ko-fi.com/emptyc0de
+
+Thank you for your support! ❤️

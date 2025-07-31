@@ -1,6 +1,6 @@
 # OffCrypt – Secure Message Encryption for Android
 
-OffCrypt is a professional‑grade encryption and messaging application for Android devices that works in a PGP‑style: it uses public‑key cryptography so messages can be encrypted with a recipient’s public key and decrypted only with their private key. The app combines multiple modern cryptographic algorithms and offers an array of security features to keep your communications private. Built in Kotlin, OffCrypt operates fully offline — no Internet permission is required.
+OffCrypt is encryption and messaging application for Android devices that works in a PGP‑style: it uses public‑key cryptography so messages can be encrypted with a recipient’s public key and decrypted only with their private key. The app combines multiple modern cryptographic algorithms and offers an array of security features to keep your communications private. Built in Kotlin, OffCrypt operates fully offline — no Internet permission is required.
 ###  Donate
 > ☕ **Support my work**  
 > If you find my projects useful or interesting, please consider buying me a coffee: [https://ko-fi.com/emptyc0de/tip](https://ko-fi.com/emptyc0de/tip) 🙌

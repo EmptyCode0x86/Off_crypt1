@@ -87,10 +87,6 @@ https://imgur.com/a/tbCVtkm
 | Perfect forward secrecy   | **ECDH (secp256r1)**      | Ephemeral key exchange           |
 | Random number generation  | **SecureRandom**          | Cryptographically secure RNG     |
 
-> **Embedding images in the README**  
-> Save your screenshots in an `images` folder within the repo and reference them with:  
-> `![OffCrypt screenshot](images/offcrypt-screenshot.png)`  
-> Replace the file name with your own. Images stored in the repo will render automatically on GitHub.
 
 ---
 

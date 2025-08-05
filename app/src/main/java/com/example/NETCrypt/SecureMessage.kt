@@ -1,4 +1,4 @@
-package com.example.OffCrypt
+package com.example.NETCrypt
 
 import android.content.ClipData
 import android.content.ClipboardManager

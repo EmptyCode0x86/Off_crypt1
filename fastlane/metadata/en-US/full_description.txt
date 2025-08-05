@@ -1,0 +1,15 @@
+🔐 OFFCRYPT is a secure offline-capable encryption and messaging app.
+
+KEY SECURITY FEATURES:
+✅ RSA-2048/4096 asymmetric encryption
+✅ AES-256-GCM with authentication
+✅ PBKDF2 password derivation
+✅ SecureRandom entropy
+✅ HmacSHA256 and SHA-256
+✅ Digital signatures (message authenticity)
+✅ Perfect Forward Secrecy via ECDH
+✅ Expiring messages and Burn After Reading
+✅ Sensitive memory wipe (3x overwrite)
+✅ Secure clipboard, app lifecycle wiping
+
+Only you can access your data — no accounts, no tracking, no cloud. Ideal for those who take privacy seriously.

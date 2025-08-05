@@ -104,9 +104,13 @@ https://imgur.com/a/tbCVtkm
 
 ## 📝 License
 
-**Custom License – Non‑Commercial Use Only**
+**GNU GENERAL PUBLIC LICENSE – Version 3, 29 June 2007 **
+               
+ OffCrypt - Secure Offline Encryption App  
+Copyright (C) 2025 EmptyCode0x86  
+Licensed under the GNU General Public License v3.0
 
-This software is provided for personal and non-commercial use only. All commercial rights are reserved by the original author. You may use, copy and modify the software for personal, educational or research purposes, and share it non-commercially as long as this license remains intact. Commercial use, resale, or inclusion in paid services is prohibited without written permission. See the full license text in the original repository for complete details.
+See the full license text in the original repository for complete details.
 
 ---
 

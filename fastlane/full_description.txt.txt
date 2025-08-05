@@ -1,0 +1,80 @@
+OffCrypt – Secure Message Encryption for Android | Open-source
+
+OffCrypt is encryption and messaging application for Android devices that works in a PGP‑style: it uses public‑key cryptography so messages can be encrypted with a recipient’s public key and decrypted only with their private key. The app combines multiple modern cryptographic algorithms and offers an array of security features to keep your communications private. Built in Kotlin, OffCrypt operates fully offline — no Internet permission is required.
+
+🎯 Features
+
+🔒 Encryption Methods
+
+    Password-based encryption: AES-256-GCM with PBKDF2.
+    RSA-2048: Asymmetric encryption with digital signatures.
+    RSA-4096: Maximum-strength asymmetric encryption with SHA-512 signatures.
+
+🛡️ Security Features
+
+    Perfect Forward Secrecy (ECDH key exchange).
+    Digital signatures for authenticity.
+    Message expiration (1 hour to 1 year).
+    Burn after reading (self-destruct messages on view).
+    HMAC-SHA256 for tamper protection and secure memory wiping.
+
+📁 File Operations
+
+    Export encrypted messages to files.
+    Import and decrypt encrypted files.
+    Import/export RSA public keys.
+
+🔑 Key Management
+
+    Automatic RSA key generation (2048- or 4096-bit).
+    Encrypted private key storage using AES-256-GCM.
+    Cryptographically secure password generator.
+
+🧾 System Requirements
+
+    Android 5.0 (API 21) or higher.
+    Minimum 50 MB of storage space.
+    Operates entirely offline; no Internet permission needed.
+
+🔧 Installation
+
+    Download the latest APK from the Releases page.
+    Enable “Install from unknown sources” in your Android settings.
+    Install the APK and grant the requested permissions.
+
+📚 Usage Guide
+🔑 Password-Based Encryption
+
+    Choose Password as the encryption type.
+    Enter your message.
+    Choose a password:
+        Random Password: Use the generated secure password (recommended).
+        Custom Password: Enter your own password.
+    Configure extra options (expiration, burn after reading).
+    Press Encrypt message and share the encrypted message and password separately.
+
+🔐 RSA Encryption (Asymmetric)
+
+    Select RSA‑2048 or RSA‑4096.
+    Generate a new key pair (Generate new key pair).
+    Share your public key with contacts.
+    Import the recipient’s public key.
+    Enter your message and configure security options.
+    Press Encrypt message and send the encrypted message (no password needed).
+    The recipient can decrypt the message without a password; signatures are verified if the sender’s public key is available.
+
+📁 File Operations
+
+    Create encrypted file: Save messages as encrypted files.
+    Import encrypted file for reading: Load and decrypt encrypted files.
+    Load public key: Import RSA public keys from text files.
+
+🧪 Cryptographic Architecture
+Function 	Algorithm / Size 	Notes
+Symmetric encryption 	AES‑256‑GCM 	Authenticated encryption
+Asymmetric encryption 	RSA‑OAEP 2048/4096 	SHA‑256 + MGF1 padding
+Key derivation 	PBKDF2‑HMAC‑SHA256 	100 000 iterations
+Message authentication 	HMAC‑SHA256 	
+Digital signatures 	RSA‑PSS 2048/4096 	SHA‑256 / SHA‑512
+Perfect forward secrecy 	ECDH (secp256r1) 	Ephemeral key exchange
+Random number generation 	SecureRandom 	Cryptographically secure RNG

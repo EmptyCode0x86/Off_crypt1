@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">OffCrypt</string>
+    <string name="accessibility_service_description">
+        Sovellusten lukituspalvelu tarvitsee tämän käyttöoikeuden valvoakseen sovelluksia ja lukitakseen ne turvallisesti.
+        Palvelu ei kerää henkilökohtaisia tietoja vaan ainoastaan tarkkailee avattuja sovelluksia
+        turvallisuuden varmistamiseksi.
+    </string>
+
+    <!-- Activity labelit -->
+
+    <string name="activity_menu">🌐OffCrypt</string>
+
+    <string name="title_activity_voice_encryption">VoiceEncryption</string>
+    <string name="tab_text_1">Tab 1</string>
+    <string name="tab_text_2">Tab 2</string>
+</resources>

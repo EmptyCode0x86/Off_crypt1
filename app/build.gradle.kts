@@ -11,7 +11,7 @@ android {
     defaultConfig {
         applicationId = "com.example.OffCrypt"
         minSdk = 24
-        targetSdk = 35
+        targetSdk = 34
         versionCode = 1
         versionName = "1.0"
 

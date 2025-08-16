@@ -18,25 +18,25 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
-    signingConfigs {
-        create("release") {
-            storeFile = file(project.property("RELEASE_STORE_FILE") as String)
-            storePassword = project.property("RELEASE_STORE_PASSWORD") as String
-            keyAlias = project.property("RELEASE_KEY_ALIAS") as String
-            keyPassword = project.property("RELEASE_KEY_PASSWORD") as String
-        }
-    }
+// signingConfigs {
+//     create("release") {
+//         storeFile = file(project.property("RELEASE_STORE_FILE") as String)
+//         storePassword = project.property("RELEASE_STORE_PASSWORD") as String
+//         keyAlias = project.property("RELEASE_KEY_ALIAS") as String
+//         keyPassword = project.property("RELEASE_KEY_PASSWORD") as String
+//     }
+// }
 
-    buildTypes {
-        getByName("release") {
-            isMinifyEnabled = true
-            signingConfig = signingConfigs.getByName("release")
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
-            )
-        }
+
+ buildTypes {
+    getByName("release") {
+        isMinifyEnabled = true
+        proguardFiles(
+            getDefaultProguardFile("proguard-android-optimize.txt"),
+            "proguard-rules.pro"
+        )
     }
+}
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11

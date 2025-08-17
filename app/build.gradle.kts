@@ -5,11 +5,11 @@ plugins {
 }
 
 android {
-    namespace = "com.example.OffCrypt"
+    namespace = "com.example.NETCrypt"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.example.OffCrypt"
+        applicationId = "com.example.NETCrypt"
         minSdk = 35
         targetSdk = 35
         versionCode = 1

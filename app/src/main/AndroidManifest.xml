@@ -63,13 +63,6 @@
             </intent-filter>
         </activity>
 
-        <!-- Secondary activity -->
-        <activity
-            android:name=".VoiceEncryption"
-            android:exported="false"
-            android:label="@string/title_activity_voice_encryption"
-            android:theme="@style/Theme.App.Dark.NoActionBar"
-            android:parentActivityName=".SecureMessageActivity" />
 
         <!-- File provider for secure file sharing -->
         <provider

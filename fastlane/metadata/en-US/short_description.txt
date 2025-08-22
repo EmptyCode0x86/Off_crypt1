@@ -1,1 +1,0 @@
-OFFCRYPT is a secure offline-capable encryption app.

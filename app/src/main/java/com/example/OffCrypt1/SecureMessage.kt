@@ -1,14 +1,22 @@
-package com.example.NETCrypt
+package com.example.OffCrypt1
 
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
+import android.content.Intent
 import android.net.Uri
+import android.text.SpannableString
+import android.text.Spanned
+import android.text.TextPaint
+import android.text.method.LinkMovementMethod
+import android.text.style.ClickableSpan
 import android.os.Bundle
 import android.view.View
 import android.widget.*
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import com.example.OffCrypt1.EncryptedPreferences
+import com.example.OffCrypt1.R
 import java.io.ByteArrayOutputStream
 import java.io.FileOutputStream
 import java.io.InputStream
@@ -26,7 +34,6 @@ import javax.crypto.spec.PBEKeySpec
 import javax.crypto.spec.SecretKeySpec
 
 import androidx.appcompat.widget.SwitchCompat
-import android.content.SharedPreferences
 import androidx.cardview.widget.CardView
 import java.text.SimpleDateFormat
 import java.util.*
@@ -47,9 +54,17 @@ import android.graphics.Color
 import java.security.Key
 import android.content.ComponentCallbacks2
 import java.io.File
+import com.google.android.material.tabs.TabLayout
 
 
-class SecureMessageActivity : AppCompatActivity() {
+class SecureMessage : AppCompatActivity() {
+
+    private lateinit var tabLayoutSecure: com.google.android.material.tabs.TabLayout
+    private lateinit var viewEncryptTab: LinearLayout
+    private lateinit var viewDecryptTab: LinearLayout
+    private lateinit var viewFileEncryptionTab: LinearLayout
+    private lateinit var viewInstructionsTab: LinearLayout
+    private lateinit var cardViewEncryptedMessage: androidx.cardview.widget.CardView
 
     companion object {
         private const val SALT_SIZE = 32
@@ -67,13 +82,13 @@ class SecureMessageActivity : AppCompatActivity() {
         private const val VERSION_BYTE_RSA_ALL: Byte = 0x07
 
         private const val VERSION_BYTE_RSA_4096_AES_FULL: Byte = 0x0A
+        private const val VERSION_BYTE_FILE_ENCRYPTED: Byte = 0x0B
 
         private const val KEY_PUBLIC_KEY_2048 = "public_key_2048"
         private const val KEY_PRIVATE_KEY_2048 = "private_key_2048"
         private const val KEY_PUBLIC_KEY_4096 = "public_key_4096"
         private const val KEY_PRIVATE_KEY_4096 = "private_key_4096"
 
-        private const val KEY_MASTER_PASSWORD = "rsa_key_master_2024_v2_aes256gcm"
         private const val ENCRYPTED_KEYS_FILE_2048 = "encrypted_rsa_2048.key"
         private const val ENCRYPTED_KEYS_FILE_4096 = "encrypted_rsa_4096.key"
 
@@ -88,8 +103,8 @@ class SecureMessageActivity : AppCompatActivity() {
         private const val LOCKOUT_DURATION = 300000L
 
         private const val SECURE_WIPE_ITERATIONS = 7
-        private const val CLIPBOARD_CLEAR_DELAY_SENSITIVE = 15_000L
-        private const val CLIPBOARD_CLEAR_DELAY_NORMAL = 45_000L
+        private const val CLIPBOARD_CLEAR_DELAY_SENSITIVE = 600_000L
+        private const val CLIPBOARD_CLEAR_DELAY_NORMAL = 600_000L
 
         private val secureRandom = SecureRandom()
     }
@@ -113,6 +128,47 @@ class SecureMessageActivity : AppCompatActivity() {
     private lateinit var layoutRandomPassword: LinearLayout
     private lateinit var layoutCustomPassword: LinearLayout
 
+    // File encryption UI elements
+    // File encryption password UI elements
+    private lateinit var switchFileRandomPassword: SwitchCompat
+    // layoutFilePasswordSettings removed - now using cardFilePasswordSettings
+    private lateinit var layoutFileRandomPassword: LinearLayout
+    private lateinit var layoutFileCustomPassword: LinearLayout
+    private lateinit var textViewFilePassword: TextView
+    private lateinit var buttonFileCopyPassword: Button
+    private lateinit var layoutFileRSAManagement: LinearLayout
+    private lateinit var buttonFileGenerateNew: Button
+    private lateinit var editTextFileCustomPassword: EditText
+    private lateinit var buttonSelectFile: Button
+    private lateinit var buttonEncryptFile: Button
+    private lateinit var buttonDecryptFile: Button
+    private lateinit var textViewSelectedFile: TextView
+    private lateinit var textViewFileMessage: TextView
+    private lateinit var radioGroupFileEncryptionMode: RadioGroup
+    private lateinit var radioFilePasswordMode: RadioButton
+    private lateinit var radioFileRSAMode: RadioButton
+    private lateinit var radioFileRSA4096Mode: RadioButton
+    private lateinit var switchSecureDelete: androidx.appcompat.widget.SwitchCompat
+    private lateinit var switchVerifyEncryption: androidx.appcompat.widget.SwitchCompat
+    private lateinit var switchStripMetadata: androidx.appcompat.widget.SwitchCompat
+
+    // File Disappear Settings
+    private lateinit var switchFileEnableExpiration: androidx.appcompat.widget.SwitchCompat
+    private lateinit var layoutFileExpirationSettings: LinearLayout
+    private lateinit var spinnerFileExpirationTime: Spinner
+
+    // File Decryption
+    private lateinit var buttonSelectEncryptedFile: Button
+
+    // File RSA Management
+    private lateinit var buttonFileGenerateKeyPair: Button
+    private lateinit var buttonFileCopyPublicKey: Button
+    private lateinit var buttonFilePastePublicKey: Button
+    private lateinit var buttonFileClearPublicKey: Button
+    private lateinit var textViewFilePublicKey: TextView
+    private lateinit var textViewFileRSAStatus: TextView
+    private lateinit var editTextFileRecipientPublicKey: EditText
+
     private lateinit var radioGroupEncryptionMode: RadioGroup
     private lateinit var radioPasswordMode: RadioButton
     private lateinit var radioRSAMode: RadioButton
@@ -122,27 +178,86 @@ class SecureMessageActivity : AppCompatActivity() {
     private lateinit var textViewPublicKey: TextView
     private lateinit var buttonCopyPublicKey: Button
     private lateinit var buttonGenerateKeyPair: Button
+
     private lateinit var editTextRecipientPublicKey: EditText
     private lateinit var buttonImportPublicKey: Button
     private lateinit var textViewRSAStatus: TextView
-    private lateinit var buttonShowRSAHelp: Button
-    private lateinit var textViewRSAHelp: TextView
 
     private lateinit var switchEnableExpiration: SwitchCompat
     private lateinit var layoutExpirationSettings: LinearLayout
     private lateinit var spinnerExpirationTime: Spinner
     private lateinit var switchBurnAfterReading: SwitchCompat
     private lateinit var textViewSignatureStatus: TextView
-    private lateinit var buttonShowSecurityFeatures: Button
-    private lateinit var textViewSecurityFeatures: TextView
 
     private var generatedPassword: String = ""
-    private lateinit var sharedPreferences: SharedPreferences
     private var keyPair: KeyPair? = null
+    private lateinit var securityServices: SecurityServiceContainer
+    
+    // Easy access properties for frequently used services
+    private val encryptedPreferences get() = securityServices.encryptedPreferences
+    private val cryptoManager get() = securityServices.cryptoManager
+    private val messageCryptoService get() = securityServices.messageCryptoService
+    private val fileEncryptionManager get() = securityServices.fileEncryptionManager
 
     private var lastDecryptedMetadata: String? = null
     private val sensitiveStrings = mutableListOf<String>()
     private val clearClipboardHandler = Handler(Looper.getMainLooper())
+    private val delayedClearHandler = Handler(Looper.getMainLooper())
+    private var delayedClearRunnable: Runnable? = null
+    
+    // Debug system
+    private val debugMessages = mutableListOf<String>()
+    private fun addDebugMessage(message: String) {
+        val timestamp = java.text.SimpleDateFormat("HH:mm:ss.SSS", java.util.Locale.getDefault()).format(java.util.Date())
+        val logEntry = "[$timestamp] $message"
+        debugMessages.add(logEntry)
+        android.util.Log.d("OffCrypt-Debug", message)
+        
+        // Keep only last 100 messages
+        if (debugMessages.size > 100) {
+            debugMessages.removeAt(0)
+        }
+    }
+    
+    private fun showDebugDialog(title: String = "🔍 Debug Information", autoOpen: Boolean = false) {
+        val debugText = debugMessages.joinToString("\n")
+        
+        val builder = android.app.AlertDialog.Builder(this, android.R.style.Theme_Material_Dialog_Alert)
+        builder.setTitle(title)
+        builder.setMessage(if (debugText.isEmpty()) "No debug messages" else debugText)
+        
+        builder.setPositiveButton("📋 Copy All") { _, _ ->
+            val clipboard = getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+            val clip = android.content.ClipData.newPlainText("NETCrypt Debug", debugText)
+            clipboard.setPrimaryClip(clip)
+            showToast("Debug messages copied to clipboard!")
+        }
+        
+        builder.setNeutralButton("🗑️ Clear") { _, _ ->
+            debugMessages.clear()
+            showToast("Debug messages cleared")
+        }
+        
+        builder.setNegativeButton("❌ Close", null)
+        
+        val dialog = builder.create()
+        
+        // Make text selectable and scrollable
+        dialog.show()
+        val messageView = dialog.findViewById<android.widget.TextView>(android.R.id.message)
+        messageView?.apply {
+            setTextIsSelectable(true)
+            maxLines = 20
+            scrollBarStyle = android.view.View.SCROLLBARS_INSIDE_INSET
+            isVerticalScrollBarEnabled = true
+            movementMethod = android.text.method.ScrollingMovementMethod()
+        }
+    }
+
+    // File encryption variables
+    private var selectedFileUri: Uri? = null
+    private var currentlyDecryptedMessage: String? = null
+    private var burnAfterReadingEnabled = false
 
     private val expirationOptions = arrayOf(
         "1 hour" to 1L,
@@ -169,14 +284,38 @@ class SecureMessageActivity : AppCompatActivity() {
         uri?.let { importPublicKeyFromFile(it) }
     }
 
+    // File encryption launchers
+    private val selectFileToEncryptLauncher = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        uri?.let {
+            selectedFileUri = it
+            updateSelectedFileDisplay()
+        }
+    }
+
+    private val saveEncryptedFileLauncher = registerForActivityResult(ActivityResultContracts.CreateDocument("application/octet-stream")) { uri ->
+        uri?.let { saveEncryptedFileData(it) }
+    }
+
+    private val saveDecryptedFileLauncher = registerForActivityResult(ActivityResultContracts.CreateDocument("*/*")) { uri ->
+        uri?.let { saveDecryptedFileData(it) }
+    }
+
+    private val openEncryptedFileLauncher = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        uri?.let { decryptFileFromUri(it) }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         try {
             setContentView(R.layout.activity_secure_message)
-            sharedPreferences = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            
+            // Initialize security services container with dependency injection
+            securityServices = SecurityServiceContainer(this)
+            securityServices.initialize()
 
             initViews()
+            setupTabNavigation()
             setupClickListeners()
             setupExpirationSpinner()
 
@@ -186,7 +325,11 @@ class SecureMessageActivity : AppCompatActivity() {
             }
 
             generateNewPassword()
+            addDebugMessage("🚀 Application started - loading key pair for current mode")
             loadKeyPairForCurrentMode()
+            switchToPasswordMode()
+            // Initialize file encryption UI state
+            updateSelectedFileDisplay()
 
         } catch (e: Exception) {
             showToast("Application startup failed: ${e.message}")
@@ -329,6 +472,16 @@ class SecureMessageActivity : AppCompatActivity() {
                 lastDecryptedMetadata = null
             }
 
+            // Clear burn after reading message if enabled
+            if (burnAfterReadingEnabled) {
+                currentlyDecryptedMessage?.let { message ->
+                    secureWipeString(message)
+                    currentlyDecryptedMessage = null
+                    textViewDecrypted.text = "[MESSAGE DESTROYED - BURN AFTER READING]"
+                    burnAfterReadingEnabled = false
+                }
+            }
+
             repeat(3) {
                 System.gc()
                 System.runFinalization()
@@ -365,6 +518,47 @@ class SecureMessageActivity : AppCompatActivity() {
             layoutRandomPassword = findViewById(R.id.layoutRandomPassword)
             layoutCustomPassword = findViewById(R.id.layoutCustomPassword)
 
+            // File encryption UI elements
+            // File encryption password elements  
+            switchFileRandomPassword = findViewById(R.id.switchFileRandomPassword)
+            // layoutFilePasswordSettings removed - now using cardFilePasswordSettings
+            layoutFileRandomPassword = findViewById(R.id.layoutFileRandomPassword)
+            layoutFileCustomPassword = findViewById(R.id.layoutFileCustomPassword)
+            textViewFilePassword = findViewById(R.id.textViewFilePassword)
+            buttonFileCopyPassword = findViewById(R.id.buttonFileCopyPassword)
+            buttonFileGenerateNew = findViewById(R.id.buttonFileGenerateNew)
+            layoutFileRSAManagement = findViewById(R.id.layoutFileRSAManagement)
+            buttonSelectFile = findViewById(R.id.buttonSelectFile)
+            buttonEncryptFile = findViewById(R.id.buttonEncryptFile)
+            buttonDecryptFile = findViewById(R.id.buttonDecryptFile)
+            textViewSelectedFile = findViewById(R.id.textViewSelectedFile)
+            textViewFileMessage = findViewById(R.id.textViewFileMessage)
+
+            // File Disappear elements
+            switchFileEnableExpiration = findViewById(R.id.switchFileEnableExpiration)
+            layoutFileExpirationSettings = findViewById(R.id.layoutFileExpirationSettings)
+            spinnerFileExpirationTime = findViewById(R.id.spinnerFileExpirationTime)
+
+            // File Decryption
+            buttonSelectEncryptedFile = findViewById(R.id.buttonSelectEncryptedFile)
+
+            // File RSA Management
+            buttonFileGenerateKeyPair = findViewById(R.id.buttonFileGenerateKeyPair)
+            buttonFileCopyPublicKey = findViewById(R.id.buttonFileCopyPublicKey)
+            buttonFilePastePublicKey = findViewById(R.id.buttonFilePastePublicKey)
+            buttonFileClearPublicKey = findViewById(R.id.buttonFileClearPublicKey)
+            textViewFilePublicKey = findViewById(R.id.textViewFilePublicKey)
+            textViewFileRSAStatus = findViewById(R.id.textViewFileRSAStatus)
+            editTextFileRecipientPublicKey = findViewById(R.id.editTextFileRecipientPublicKey)
+
+            radioGroupFileEncryptionMode = findViewById(R.id.radioGroupFileEncryptionMode)
+            radioFilePasswordMode = findViewById(R.id.radioFilePasswordMode)
+            radioFileRSAMode = findViewById(R.id.radioFileRSAMode)
+            radioFileRSA4096Mode = findViewById(R.id.radioFileRSA4096Mode)
+            switchSecureDelete = findViewById(R.id.switchSecureDelete)
+            switchVerifyEncryption = findViewById(R.id.switchVerifyEncryption)
+            switchStripMetadata = findViewById(R.id.switchStripMetadata)
+
             try {
                 radioGroupEncryptionMode = findViewById(R.id.radioGroupEncryptionMode)
                 radioPasswordMode = findViewById(R.id.radioPasswordMode)
@@ -375,12 +569,17 @@ class SecureMessageActivity : AppCompatActivity() {
                 textViewPublicKey = findViewById(R.id.textViewPublicKey)
                 buttonCopyPublicKey = findViewById(R.id.buttonCopyPublicKey)
                 buttonGenerateKeyPair = findViewById(R.id.buttonGenerateKeyPair)
+
                 editTextRecipientPublicKey = findViewById(R.id.editTextRecipientPublicKey)
                 buttonImportPublicKey = findViewById(R.id.buttonImportPublicKey)
                 textViewRSAStatus = findViewById(R.id.textViewRSAStatus)
-                buttonShowRSAHelp = findViewById(R.id.buttonShowRSAHelp)
-                textViewRSAHelp = findViewById(R.id.textViewRSAHelp)
 
+                tabLayoutSecure = findViewById(R.id.tabLayout)
+                viewEncryptTab = findViewById(R.id.viewEncryptTab)
+                viewDecryptTab = findViewById(R.id.viewDecryptTab)
+                viewFileEncryptionTab = findViewById(R.id.viewFileEncryptionTab)
+                viewInstructionsTab = findViewById(R.id.viewInstructionsTab)
+                cardViewEncryptedMessage = findViewById(R.id.cardViewEncryptedMessage)
             } catch (e: Exception) {
                 showToast("Failed to load RSA components.")
                 throw e
@@ -392,8 +591,7 @@ class SecureMessageActivity : AppCompatActivity() {
                 spinnerExpirationTime = findViewById(R.id.spinnerExpirationTime)
                 switchBurnAfterReading = findViewById(R.id.switchBurnAfterReading)
                 textViewSignatureStatus = findViewById(R.id.textViewSignatureStatus)
-                buttonShowSecurityFeatures = findViewById(R.id.buttonShowSecurityFeatures)
-                textViewSecurityFeatures = findViewById(R.id.textViewSecurityFeatures)
+
             } catch (e: Exception) {
                 showToast("Failed to load security components.")
                 throw e
@@ -410,7 +608,7 @@ class SecureMessageActivity : AppCompatActivity() {
             override fun getView(position: Int, convertView: View?, parent: android.view.ViewGroup): View {
                 val view = super.getView(position, convertView, parent)
                 val textView = view as TextView
-                textView.setTextColor(android.graphics.Color.BLACK)
+                textView.setTextColor(android.graphics.Color.WHITE)
                 textView.textSize = 14f
                 textView.setPadding(12, 12, 12, 12)
                 return view
@@ -419,15 +617,20 @@ class SecureMessageActivity : AppCompatActivity() {
             override fun getDropDownView(position: Int, convertView: View?, parent: android.view.ViewGroup): View {
                 val view = super.getDropDownView(position, convertView, parent)
                 val textView = view as TextView
-                textView.setTextColor(android.graphics.Color.BLACK)
+                textView.setTextColor(android.graphics.Color.WHITE)
                 textView.textSize = 14f
                 textView.setPadding(12, 12, 12, 12)
                 return view
             }
         }
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        
+        // Setup both Encrypt text and File encryption spinners
         spinnerExpirationTime.adapter = adapter
         spinnerExpirationTime.setSelection(3)
+        
+        spinnerFileExpirationTime.adapter = adapter
+        spinnerFileExpirationTime.setSelection(3)
     }
 
     private fun setupClickListeners() {
@@ -442,8 +645,62 @@ class SecureMessageActivity : AppCompatActivity() {
             buttonClear.setOnClickListener { clearAllFields() }
             buttonGenerateNew.setOnClickListener { generateNewPassword() }
 
+            // File encryption click listeners
+            buttonSelectFile.setOnClickListener {
+                selectFileToEncryptLauncher.launch(arrayOf("*/*", "application/*", "text/*", "image/*"))
+            }
+            buttonEncryptFile.setOnClickListener {
+                encryptSelectedFile()
+            }
+            buttonSelectEncryptedFile.setOnClickListener {
+                openEncryptedFileLauncher.launch(arrayOf("application/octet-stream", "*.enc", "*/*"))
+            }
+            buttonDecryptFile.setOnClickListener {
+                // This will be called after file is selected by buttonSelectEncryptedFile
+                showToast("Please select an encrypted file first using 'Select .enc File' button")
+            }
+
             switchRandomPassword.setOnCheckedChangeListener { _, isChecked ->
                 togglePasswordMode(isChecked)
+            }
+            
+            // File encryption password listeners
+            switchFileRandomPassword.setOnCheckedChangeListener { _, isChecked ->
+                toggleFilePasswordMode(isChecked)
+            }
+            buttonFileGenerateNew.setOnClickListener { generateFilePassword() }
+
+            // File Disappear listener
+            switchFileEnableExpiration.setOnCheckedChangeListener { _, isChecked ->
+                layoutFileExpirationSettings.visibility = if (isChecked) View.VISIBLE else View.GONE
+            }
+            
+            // File RSA Management listeners (MISSING FUNCTIONALITY FIXED)
+            buttonFileGenerateKeyPair.setOnClickListener { generateFileEncryptionKeyPair() }
+            buttonFileCopyPublicKey.setOnClickListener { copyFilePublicKeyToClipboard() }
+            buttonFilePastePublicKey.setOnClickListener { pasteFileRecipientPublicKey() }
+            buttonFileClearPublicKey.setOnClickListener { clearFileRecipientPublicKey() }
+            buttonFileCopyPassword.setOnClickListener { copyFilePasswordToClipboard() }
+            
+            // File encryption mode change listener (UPDATED FOR CARDS)
+            radioGroupFileEncryptionMode.setOnCheckedChangeListener { _, checkedId ->
+                when (checkedId) {
+                    R.id.radioFilePasswordMode -> {
+                        // Show Password card, hide RSA card
+                        findViewById<androidx.cardview.widget.CardView>(R.id.cardFilePasswordSettings).visibility = View.VISIBLE
+                        findViewById<androidx.cardview.widget.CardView>(R.id.cardFileRSAManagement).visibility = View.GONE
+                        layoutFileRSAManagement.visibility = View.GONE
+                        // Note: layoutFilePasswordSettings now inside cardFilePasswordSettings
+                    }
+                    R.id.radioFileRSAMode, R.id.radioFileRSA4096Mode -> {
+                        // Show RSA card, hide Password card  
+                        findViewById<androidx.cardview.widget.CardView>(R.id.cardFilePasswordSettings).visibility = View.GONE
+                        findViewById<androidx.cardview.widget.CardView>(R.id.cardFileRSAManagement).visibility = View.VISIBLE
+                        layoutFileRSAManagement.visibility = View.VISIBLE
+                        // Load key pair for current File RSA mode (RSA-2048 or RSA-4096)
+                        loadKeyPairForFileEncryption()
+                    }
+                }
             }
 
             radioGroupEncryptionMode.setOnCheckedChangeListener { _, checkedId ->
@@ -461,39 +718,19 @@ class SecureMessageActivity : AppCompatActivity() {
             }
 
             buttonGenerateKeyPair.setOnClickListener { generateNewKeyPair() }
-            buttonCopyPublicKey.setOnClickListener { copyPublicKeyToClipboard() }
+            buttonCopyPublicKey.setOnClickListener { copyPublicKeyToClipboard()
+
+            }
 
             buttonImportPublicKey.setOnClickListener {
                 importPublicKeyLauncher.launch(arrayOf("text/plain", "*/*"))
             }
 
-            buttonShowSecurityFeatures.setOnClickListener {
-                if (textViewSecurityFeatures.visibility == View.GONE) {
-                    textViewSecurityFeatures.visibility = View.VISIBLE
-                    buttonShowSecurityFeatures.text = "🔒 Hide security features"
-                    buttonShowSecurityFeatures.setCompoundDrawablesWithIntrinsicBounds(android.R.drawable.arrow_up_float, 0, 0, 0)
-                } else {
-                    textViewSecurityFeatures.visibility = View.GONE
-                    buttonShowSecurityFeatures.text = "🔒 Show security features"
-                    buttonShowSecurityFeatures.setCompoundDrawablesWithIntrinsicBounds(android.R.drawable.arrow_down_float, 0, 0, 0)
-                }
-            }
-
-            buttonShowRSAHelp.setOnClickListener {
-                if (textViewRSAHelp.visibility == View.GONE) {
-                    textViewRSAHelp.visibility = View.VISIBLE
-                    buttonShowRSAHelp.text = "❓ Hide RSA help"
-                    buttonShowRSAHelp.setCompoundDrawablesWithIntrinsicBounds(android.R.drawable.arrow_up_float, 0, 0, 0)
-                } else {
-                    textViewRSAHelp.visibility = View.GONE
-                    buttonShowRSAHelp.text = "❓ How does RSA encryption work?"
-                    buttonShowRSAHelp.setCompoundDrawablesWithIntrinsicBounds(android.R.drawable.arrow_down_float, 0, 0, 0)
-                }
-            }
 
             switchEnableExpiration.setOnCheckedChangeListener { _, isChecked ->
                 layoutExpirationSettings.visibility = if (isChecked) View.VISIBLE else View.GONE
             }
+
 
         } catch (e: Exception) {
             showToast("Click listeners setup failed: ${e.message}")
@@ -501,12 +738,345 @@ class SecureMessageActivity : AppCompatActivity() {
         }
     }
 
+    // File encryption methods
+    private fun updateSelectedFileDisplay() {
+        try {
+            selectedFileUri?.let { uri ->
+                val fileName = fileEncryptionManager.getFileName(uri)
+                val fileSize = fileEncryptionManager.getFileSize(uri)
+                val fileSizeText = fileEncryptionManager.formatFileSize(fileSize)
+                textViewSelectedFile.text = "📁 $fileName ($fileSizeText)"
+                textViewFileMessage.text = "✅ File selected - ready for encryption"
+                textViewFileMessage.setTextColor(resources.getColor(android.R.color.holo_green_dark, theme))
+                buttonEncryptFile.isEnabled = true
+            } ?: run {
+                textViewSelectedFile.text = "📁 No file selected"
+                textViewFileMessage.text = "Select a file to encrypt"
+                textViewFileMessage.setTextColor(resources.getColor(android.R.color.white, theme))
+                buttonEncryptFile.isEnabled = false
+            }
+        } catch (e: Exception) {
+            textViewSelectedFile.text = "⚠️ File access failed"
+            textViewFileMessage.text = "❌ Error reading file: ${e.message}"
+            textViewFileMessage.setTextColor(resources.getColor(android.R.color.holo_red_dark, theme))
+            buttonEncryptFile.isEnabled = false
+            showToast("File selection failed: ${e.message}")
+        }
+    }
+
+
+    private fun encryptSelectedFile() {
+        selectedFileUri?.let { uri ->
+            // Check encryption mode is selected and necessary keys/passwords are available
+            val errorMessage = when {
+                radioFilePasswordMode.isChecked && getCurrentPassword().isEmpty() ->
+                    "Enter password or use generated password first!"
+                (radioFileRSAMode.isChecked || radioFileRSA4096Mode.isChecked) &&
+                        editTextRecipientPublicKey.text.toString().trim().isEmpty() ->
+                    "Enter recipient's public key first!"
+                else -> null
+            }
+
+            if (errorMessage != null) {
+                showToast(errorMessage)
+                return
+            }
+
+            try {
+                showToast("Encrypting file... Please wait.")
+                textViewFileMessage.text = "🔄 Encrypting file..."
+                textViewFileMessage.setTextColor(resources.getColor(android.R.color.holo_blue_bright, theme))
+
+                Thread {
+                    try {
+                        val fileData = fileEncryptionManager.readFileData(uri)
+                        val fileName = fileEncryptionManager.getFileName(uri)
+                        
+                        // Get expiration time from UI (DISAPPEAR FILE FUNCTIONALITY)
+                        val expirationTime = getFileExpirationTime()
+                        var enhancedMetadata = fileEncryptionManager.createFileMetadata(fileName, fileData.size.toLong())
+                        
+                        // Add expiration time to metadata if enabled
+                        if (expirationTime > 0L) {
+                            enhancedMetadata += "\n\"expiration_time\":$expirationTime"
+                            addDebugMessage("🕒 File expiration set to: ${java.util.Date(expirationTime)}")
+                        }
+
+                        val encryptedData = if (radioFilePasswordMode.isChecked) {
+                            // Use advanced password encryption with expiration support
+                            fileEncryptionManager.encryptFileWithPasswordAdvanced(fileData, enhancedMetadata, getCurrentPassword())
+                        } else {
+                            // Advanced RSA file encryption with expiration support
+                            val recipientPublicKeyString = editTextRecipientPublicKey.text.toString().trim()
+                            if (recipientPublicKeyString.isEmpty()) {
+                                throw RuntimeException("Enter recipient's public key!")
+                            }
+                            val recipientPublicKey = cryptoManager.parsePublicKeyFromString(recipientPublicKeyString)
+                            fileEncryptionManager.encryptFileWithRSAAdvanced(
+                                fileData, 
+                                enhancedMetadata, 
+                                recipientPublicKey,
+                                keyPair, // Use current user's key pair if available
+                                enablePFS = true,
+                                enableSignatures = true,
+                                expirationTime = expirationTime
+                            )
+                        }
+
+                        runOnUiThread {
+                            val timestamp = System.currentTimeMillis()
+                            val prefix = when {
+                                radioFilePasswordMode.isChecked -> "Password"
+                                radioFileRSA4096Mode.isChecked -> "RSA4096"
+                                else -> "RSA"
+                            }
+                            val expirationSuffix = if (expirationTime > 0L) "_EXPIRES" else ""
+                            val encryptedFileName = "${prefix}_encrypted_${fileName}_$timestamp$expirationSuffix.enc"
+
+                            // Save the encrypted data temporarily for the file launcher
+                            saveEncryptedDataForLauncher(encryptedData)
+                            saveEncryptedFileLauncher.launch(encryptedFileName)
+                        }
+
+                    } catch (e: Exception) {
+                        runOnUiThread {
+                            showToast("File encryption failed: ${e.message}")
+                            textViewFileMessage.text = "❌ File encryption failed: ${e.message}"
+                            textViewFileMessage.setTextColor(resources.getColor(android.R.color.holo_red_dark, theme))
+                        }
+                    }
+                }.start()
+
+            } catch (e: Exception) {
+                showToast("File encryption failed: ${e.message}")
+                textViewFileMessage.text = "❌ File encryption failed"
+                textViewFileMessage.setTextColor(resources.getColor(android.R.color.holo_red_dark, theme))
+            }
+        } ?: showToast("Select a file first!")
+    }
+
+    private var temporaryEncryptedData: ByteArray? = null
+
+    private fun saveEncryptedDataForLauncher(data: ByteArray) {
+        temporaryEncryptedData = data
+    }
+
+    private fun saveEncryptedFileData(uri: Uri) {
+        temporaryEncryptedData?.let { data ->
+            try {
+                fileEncryptionManager.saveEncryptedData(uri, data)
+
+                val modeText = when {
+                    radioFilePasswordMode.isChecked -> "with password"
+                    radioFileRSA4096Mode.isChecked -> "RSA-4096 + AES-256-GCM"
+                    else -> "with RSA keys"
+                }
+                showToast("Encrypted file saved $modeText!")
+                textViewFileMessage.text = "✅ File encrypted and saved successfully"
+                textViewFileMessage.setTextColor(resources.getColor(android.R.color.holo_green_dark, theme))
+
+                // Reset selection after successful encryption
+                selectedFileUri = null
+                updateSelectedFileDisplay()
+
+                // Clear temporary data
+                secureWipeByteArray(temporaryEncryptedData!!)
+                temporaryEncryptedData = null
+
+            } catch (e: Exception) {
+                showToast("File save failed: ${e.message}")
+            }
+        }
+    }
+
+
+
+
+
+    private fun decryptFileFromUri(uri: Uri) {
+        try {
+            showToast("Decrypting file... Please wait.")
+
+            Thread {
+                try {
+                    val encryptedData = fileEncryptionManager.readFileData(uri)
+                    val version = encryptedData[0]
+
+                    val (fileData, metadata) = when (version) {
+                        VERSION_BYTE_FILE_ENCRYPTED -> {
+                            val password = editTextDecryptPassword.text.toString().trim()
+                            if (password.isEmpty()) {
+                                throw RuntimeException("Enter password for file decryption!")
+                            }
+                            cryptoManager.decryptFileWithPassword(encryptedData, password)
+                        }
+                        VERSION_BYTE_RSA_ALL, VERSION_BYTE_RSA_4096_AES_FULL -> {
+                            if (keyPair?.private == null) {
+                                throw RuntimeException("Private key missing for file decryption!")
+                            }
+                            cryptoManager.decryptFileWithRSA(encryptedData, keyPair!!.private)
+                        }
+                        else -> throw RuntimeException("Unknown file encryption version: $version")
+                    }
+
+                    runOnUiThread {
+                        val fileName = fileEncryptionManager.extractFileNameFromMetadata(metadata)
+                        textViewFileMessage.text = "✅ File decrypted: $fileName"
+                        textViewFileMessage.setTextColor(resources.getColor(android.R.color.holo_green_dark, theme))
+
+                        // Save the decrypted file
+                        saveDecryptedDataForLauncher(fileData, fileName)
+                        saveDecryptedFileLauncher.launch(fileName)
+
+                        showToast("File decrypted successfully!")
+                    }
+
+                } catch (e: Exception) {
+                    runOnUiThread {
+                        showToast("File decryption failed: ${e.message}")
+                        textViewFileMessage.text = "❌ File decryption failed"
+                        textViewFileMessage.setTextColor(resources.getColor(android.R.color.holo_red_dark, theme))
+                    }
+                }
+            }.start()
+
+        } catch (e: Exception) {
+            showToast("File decryption failed: ${e.message}")
+        }
+    }
+
+    private var temporaryDecryptedFileData: ByteArray? = null
+    private var temporaryDecryptedFileName: String = ""
+
+    private fun saveDecryptedDataForLauncher(data: ByteArray, fileName: String) {
+        temporaryDecryptedFileData = data
+        temporaryDecryptedFileName = fileName
+    }
+
+    private fun saveDecryptedFileData(uri: Uri) {
+        temporaryDecryptedFileData?.let { data ->
+            try {
+                contentResolver.openFileDescriptor(uri, "w")?.use { parcelFileDescriptor ->
+                    FileOutputStream(parcelFileDescriptor.fileDescriptor).use { fileOutputStream ->
+                        fileOutputStream.write(data)
+                    }
+                }
+
+                showToast("Decrypted file saved: $temporaryDecryptedFileName")
+
+                // Clear temporary data
+                secureWipeByteArray(temporaryDecryptedFileData!!)
+                temporaryDecryptedFileData = null
+                temporaryDecryptedFileName = ""
+
+            } catch (e: Exception) {
+                showToast("File save failed: ${e.message}")
+            }
+        }
+    }
+
+    private fun decryptFileDataPasswordBased(encryptedData: ByteArray, password: String): Pair<ByteArray, String> {
+        try {
+            if (encryptedData.size < 1 + SALT_SIZE * 3 + IV_SIZE + MAC_SIZE + GCM_TAG_LENGTH) {
+                throw RuntimeException("Invalid file data size")
+            }
+
+            var offset = 1 // Skip version byte
+
+            val masterSalt = encryptedData.copyOfRange(offset, offset + SALT_SIZE)
+            offset += SALT_SIZE
+
+            val encryptionSalt = encryptedData.copyOfRange(offset, offset + SALT_SIZE)
+            offset += SALT_SIZE
+
+            val macSalt = encryptedData.copyOfRange(offset, offset + SALT_SIZE)
+            offset += SALT_SIZE
+
+            val iv = encryptedData.copyOfRange(offset, offset + IV_SIZE)
+            offset += IV_SIZE
+
+            val encryptedContent = encryptedData.copyOfRange(offset, encryptedData.size - MAC_SIZE)
+            val receivedMac = encryptedData.copyOfRange(encryptedData.size - MAC_SIZE, encryptedData.size)
+
+            val encryptionKey = generateSecureKey(password, encryptionSalt, ITERATION_COUNT)
+            val macKey = generateSecureKey(password, macSalt, ITERATION_COUNT)
+
+            val dataToVerify = encryptedData.copyOfRange(0, encryptedData.size - MAC_SIZE)
+            if (!verifyHMAC(dataToVerify, receivedMac, macKey)) {
+                throw RuntimeException("HMAC verification failed")
+            }
+
+            val keySpec = SecretKeySpec(encryptionKey, "AES")
+            val cipher = Cipher.getInstance("AES/GCM/NoPadding")
+            val gcmSpec = GCMParameterSpec(GCM_TAG_LENGTH * 8, iv)
+            cipher.init(Cipher.DECRYPT_MODE, keySpec, gcmSpec)
+
+            val decryptedData = cipher.doFinal(encryptedContent)
+            val combinedDataString = String(decryptedData, Charsets.UTF_8)
+
+            return parseFileDataAndMetadata(combinedDataString)
+
+        } catch (e: Exception) {
+            throw RuntimeException("File decryption failed", e)
+        }
+    }
+
+    private fun decryptFileDataRSA(encryptedData: ByteArray): Pair<ByteArray, String> {
+        try {
+            val encryptedString = String(encryptedData, Charsets.UTF_8)
+            val decryptedString = if (encryptedData[0] == VERSION_BYTE_RSA_4096_AES_FULL) {
+                decryptRSA4096WithAESFull(encryptedString, keyPair!!.private)
+            } else {
+                decryptRSAWithFeatures(encryptedString, keyPair!!.private, encryptedData[0])
+            }
+
+            return parseFileDataAndMetadata(decryptedString)
+
+        } catch (e: Exception) {
+            throw RuntimeException("RSA file decryption failed: ${e.message}", e)
+        }
+    }
+
+    private fun parseFileDataAndMetadata(combinedData: String): Pair<ByteArray, String> {
+        try {
+            // Parse JSON-like structure
+            val metadataStart = combinedData.indexOf("\"metadata\":") + 11
+            val metadataEnd = combinedData.indexOf(",\"filedata\":")
+            val filedataStart = combinedData.indexOf("\"filedata\":\"") + 12
+            val filedataEnd = combinedData.lastIndexOf("\"}")
+
+            val metadata = combinedData.substring(metadataStart, metadataEnd)
+            val encodedFileData = combinedData.substring(filedataStart, filedataEnd)
+
+            val fileData = Base64.getDecoder().decode(encodedFileData)
+
+            return Pair(fileData, metadata)
+
+        } catch (e: Exception) {
+            throw RuntimeException("Failed to parse file data: ${e.message}")
+        }
+    }
+
+
     private fun getCurrentPassword(): String {
         return try {
-            if (switchRandomPassword.isChecked) {
-                generatedPassword
+            // Check if we're in file encryption context
+            val isFileEncryption = viewFileEncryptionTab.visibility == View.VISIBLE
+            
+            if (isFileEncryption) {
+                // Use file encryption elements
+                if (switchFileRandomPassword.isChecked) {
+                    generatedPassword
+                } else {
+                    editTextFileCustomPassword.text.toString().trim()
+                }
             } else {
-                editTextCustomPassword.text.toString().trim()
+                // Use text encryption elements (original)
+                if (switchRandomPassword.isChecked) {
+                    generatedPassword
+                } else {
+                    editTextCustomPassword.text.toString().trim()
+                }
             }
         } catch (e: Exception) {
             showToast("Password retrieval failed: ${e.message}")
@@ -516,10 +1086,23 @@ class SecureMessageActivity : AppCompatActivity() {
 
     private fun getCurrentPasswordSecurely(): CharArray? {
         return try {
-            if (switchRandomPassword.isChecked) {
-                generatedPassword.toCharArray()
+            // Check if we're in file encryption context
+            val isFileEncryption = viewFileEncryptionTab.visibility == View.VISIBLE
+            
+            if (isFileEncryption) {
+                // Use file encryption elements
+                if (switchFileRandomPassword.isChecked) {
+                    generatedPassword.toCharArray()
+                } else {
+                    getPasswordFromEditTextSecurely(editTextFileCustomPassword)
+                }
             } else {
-                getPasswordFromEditTextSecurely(editTextCustomPassword)
+                // Use text encryption elements (original)
+                if (switchRandomPassword.isChecked) {
+                    generatedPassword.toCharArray()
+                } else {
+                    getPasswordFromEditTextSecurely(editTextCustomPassword)
+                }
             }
         } catch (e: Exception) {
             null
@@ -573,8 +1156,8 @@ class SecureMessageActivity : AppCompatActivity() {
     }
 
     private fun isAppLocked(): Boolean {
-        val failedAttempts = sharedPreferences.getInt(KEY_FAILED_ATTEMPTS, 0)
-        val lastAttemptTime = sharedPreferences.getLong(KEY_LAST_ATTEMPT_TIME, 0)
+        val failedAttempts = encryptedPreferences.getInt(KEY_FAILED_ATTEMPTS, 0)
+        val lastAttemptTime = encryptedPreferences.getLong(KEY_LAST_ATTEMPT_TIME, 0)
         val currentTime = System.currentTimeMillis()
 
         return failedAttempts >= MAX_FAILED_ATTEMPTS &&
@@ -582,7 +1165,7 @@ class SecureMessageActivity : AppCompatActivity() {
     }
 
     private fun showLockoutMessage() {
-        val remainingTime = LOCKOUT_DURATION - (System.currentTimeMillis() - sharedPreferences.getLong(KEY_LAST_ATTEMPT_TIME, 0))
+        val remainingTime = LOCKOUT_DURATION - (System.currentTimeMillis() - encryptedPreferences.getLong(KEY_LAST_ATTEMPT_TIME, 0))
         val minutes = remainingTime / 60000
 
         AlertDialog.Builder(this)
@@ -594,15 +1177,15 @@ class SecureMessageActivity : AppCompatActivity() {
     }
 
     private fun recordFailedAttempt() {
-        val currentAttempts = sharedPreferences.getInt(KEY_FAILED_ATTEMPTS, 0)
-        sharedPreferences.edit()
+        val currentAttempts = encryptedPreferences.getInt(KEY_FAILED_ATTEMPTS, 0)
+        encryptedPreferences.edit()
             .putInt(KEY_FAILED_ATTEMPTS, currentAttempts + 1)
             .putLong(KEY_LAST_ATTEMPT_TIME, System.currentTimeMillis())
             .apply()
     }
 
     private fun resetFailedAttempts() {
-        sharedPreferences.edit()
+        encryptedPreferences.edit()
             .putInt(KEY_FAILED_ATTEMPTS, 0)
             .putLong(KEY_LAST_ATTEMPT_TIME, 0)
             .apply()
@@ -632,25 +1215,17 @@ class SecureMessageActivity : AppCompatActivity() {
 
             Thread {
                 try {
-                    val keyPairGenerator = if (android.os.Build.VERSION.SDK_INT >= 23) {
-                        try {
-                            KeyPairGenerator.getInstance("RSA", "AndroidOpenSSL")
-                        } catch (e: Exception) {
-                            KeyPairGenerator.getInstance("RSA")
-                        }
-                    } else {
-                        KeyPairGenerator.getInstance("RSA")
-                    }
-                    val keySize = if (radioRSA4096Mode.isChecked) RSA_KEY_SIZE_MAX else RSA_KEY_SIZE
-                    keyPairGenerator.initialize(keySize)
-                    val newKeyPair = keyPairGenerator.generateKeyPair()
+                    val useRSA4096 = radioRSA4096Mode.isChecked
+                    val newKeyPair = cryptoManager.generateRSAKeyPair(useRSA4096)
 
                     runOnUiThread {
                         keyPair = newKeyPair
                         saveKeyPair()
                         updatePublicKeyDisplay()
                         updateRSAStatus()
-                        val sizeText = if (radioRSA4096Mode.isChecked) "RSA-4096" else "RSA-2048"
+                        // Sync to File encryption side
+                        updateFileEncryptionPublicKey()
+                        val sizeText = if (useRSA4096) "RSA-4096" else "RSA-2048"
                         showToast("New $sizeText key pair generated successfully!")
                     }
                 } catch (e: Exception) {
@@ -668,27 +1243,11 @@ class SecureMessageActivity : AppCompatActivity() {
     private fun saveKeyPair() {
         try {
             keyPair?.let { kp ->
-                val publicKeyString = Base64.getEncoder().encodeToString(kp.public.encoded)
-                val privateKeyString = Base64.getEncoder().encodeToString(kp.private.encoded)
+                val useRSA4096 = radioRSA4096Mode.isChecked
+                cryptoManager.saveKeyPair(kp, useRSA4096)
 
-                val keyData = mapOf(
-                    "public_key" to publicKeyString,
-                    "private_key" to privateKeyString,
-                    "key_size" to if (radioRSA4096Mode.isChecked) 4096 else 2048,
-                    "created" to System.currentTimeMillis(),
-                    "version" to "encrypted_v1"
-                )
-                val keyJson = keyData.entries.joinToString(",") { "\"${it.key}\":\"${it.value}\"" }
-                val keyMessage = "{$keyJson}"
-
-                val encryptedKeyData = encryptPasswordBased(keyMessage, KEY_MASTER_PASSWORD)
-
-                val keyFileName = if (radioRSA4096Mode.isChecked) ENCRYPTED_KEYS_FILE_4096 else ENCRYPTED_KEYS_FILE_2048
-                val keyFile = File(filesDir, keyFileName)
-                keyFile.writeText(encryptedKeyData)
-
-                val modeText = if (radioRSA4096Mode.isChecked) "RSA-4096" else "RSA-2048"
-                showToast("🔐 $modeText key pair encrypted with AES-256-GCM")
+                val modeText = if (useRSA4096) "RSA-4096" else "RSA-2048"
+                showToast("🔐 $modeText key pair encrypted with AndroidKeyStore")
             }
         } catch (e: Exception) {
             showToast("❌ Key pair encryption failed: ${e.message}")
@@ -696,46 +1255,43 @@ class SecureMessageActivity : AppCompatActivity() {
     }
 
     private fun loadKeyPair() {
+        addDebugMessage("🔄 Starting loadKeyPair() with KeyManagementService")
         try {
-            val keyFileName = if (radioRSA4096Mode.isChecked) ENCRYPTED_KEYS_FILE_4096 else ENCRYPTED_KEYS_FILE_2048
-            val keyFile = File(filesDir, keyFileName)
-
-            if (!keyFile.exists()) {
-                keyPair = null
-                textViewPublicKey.text = "No ${if (radioRSA4096Mode.isChecked) "RSA-4096" else "RSA-2048"} key generated"
-                return
+            val useRSA4096 = radioRSA4096Mode.isChecked
+            keyPair = cryptoManager.loadKeyPair(useRSA4096)
+            
+            if (keyPair != null) {
+                updatePublicKeyDisplay()
+                updateFileEncryptionPublicKey()
+                
+                val modeText = if (useRSA4096) "RSA-4096" else "RSA-2048"
+                addDebugMessage("🎉 $modeText key pair loaded successfully via KeyManagementService!")
+                showToast("✅ $modeText key pair loaded from AndroidKeyStore")
+            } else {
+                addDebugMessage("❌ No key pair found - setting to null")
+                textViewPublicKey.text = "No ${if (useRSA4096) "RSA-4096" else "RSA-2048"} key generated"
             }
-
-            val encryptedKeyData = keyFile.readText()
-
-            val decryptedKeyMessage = decryptPasswordBased(encryptedKeyData, KEY_MASTER_PASSWORD)
-
-            val keyData = parseSimpleJson(decryptedKeyMessage)
-            val publicKeyBytes = Base64.getDecoder().decode(keyData["public_key"] as String)
-            val privateKeyBytes = Base64.getDecoder().decode(keyData["private_key"] as String)
-
-            val keyFactory = KeyFactory.getInstance("RSA")
-            val publicKey = keyFactory.generatePublic(X509EncodedKeySpec(publicKeyBytes))
-            val privateKey = keyFactory.generatePrivate(PKCS8EncodedKeySpec(privateKeyBytes))
-
-            keyPair = KeyPair(publicKey, privateKey)
-            updatePublicKeyDisplay()
-
-            val modeText = if (radioRSA4096Mode.isChecked) "RSA-4096" else "RSA-2048"
-            showToast("✅ $modeText key pair loaded from encrypted file")
-
+            
         } catch (e: Exception) {
-            showToast("❌ Encrypted key pair loading failed: ${e.message}")
+            val errorMsg = "❌ Key loading failed: ${e.javaClass.simpleName}: ${e.message}"
+            addDebugMessage(errorMsg)
+            
+            showToast("❌ Key pair loading failed: ${e.message}")
+            showDebugDialog("❌ RSA Key Loading Error", autoOpen = true)
+            
             keyPair = null
-            textViewPublicKey.text = "Encrypted key pair loading failed"
+            textViewPublicKey.text = "No ${if (radioRSA4096Mode.isChecked) "RSA-4096" else "RSA-2048"} key generated"
         }
     }
 
     private fun loadKeyPairForCurrentMode() {
+        val mode = if (radioRSA4096Mode.isChecked) "RSA-4096" else "RSA-2048"
+        addDebugMessage("🔄 Loading key pair for mode: $mode")
         try {
             loadKeyPair()
             updateRSAStatus()
         } catch (e: Exception) {
+            addDebugMessage("❌ Mode switch failed: ${e.message}")
             showToast("Mode switch failed: ${e.message}")
         }
     }
@@ -766,17 +1322,30 @@ class SecureMessageActivity : AppCompatActivity() {
     }
 
     private fun updatePublicKeyDisplay() {
+        addDebugMessage("🖼️ Updating public key display...")
         try {
             keyPair?.let { kp ->
-                val publicKeyString = Base64.getEncoder().encodeToString(kp.public.encoded)
-                val displayKey = if (publicKeyString.length > 100) {
-                    publicKeyString.substring(0, 50) + "..." + publicKeyString.substring(publicKeyString.length - 50)
+                addDebugMessage("✅ KeyPair exists - formatting public key for display")
+                val formattedKey = cryptoManager.formatPublicKeyForSharing(kp.public)
+                addDebugMessage("📏 Formatted key length: ${formattedKey.length}")
+                addDebugMessage("📄 Key preview: ${formattedKey.take(50)}...")
+                
+                val displayKey = if (formattedKey.length > 100) {
+                    formattedKey.substring(0, 50) + "..." + formattedKey.substring(formattedKey.length - 50)
                 } else {
-                    publicKeyString
+                    formattedKey
                 }
+                
                 textViewPublicKey.text = displayKey
+                addDebugMessage("✅ Public key display updated successfully in textViewPublicKey")
+            } ?: run {
+                addDebugMessage("❌ updatePublicKeyDisplay: keyPair is null")
+                textViewPublicKey.text = "No RSA key pair available"
             }
         } catch (e: Exception) {
+            val errorMsg = "❌ Public key display failed: ${e.javaClass.simpleName}: ${e.message}"
+            addDebugMessage(errorMsg)
+            addDebugMessage("📍 Stack trace: ${e.stackTrace.take(3).joinToString { "${it.className}.${it.methodName}:${it.lineNumber}" }}")
             showToast("Public key display failed: ${e.message}")
         }
     }
@@ -827,6 +1396,7 @@ class SecureMessageActivity : AppCompatActivity() {
         }
     }
 
+    // File encryption password toggle (MISSING FUNCTIONALITY FIXED)
     private fun togglePasswordMode(useRandomPassword: Boolean) {
         try {
             if (useRandomPassword) {
@@ -839,6 +1409,22 @@ class SecureMessageActivity : AppCompatActivity() {
             }
         } catch (e: Exception) {
             showToast("Password mode switch failed: ${e.message}")
+        }
+    }
+    
+    private fun toggleFilePasswordMode(useRandomPassword: Boolean) {
+        try {
+            if (useRandomPassword) {
+                layoutFileRandomPassword.visibility = View.VISIBLE
+                layoutFileCustomPassword.visibility = View.GONE
+                generateFilePassword()
+            } else {
+                layoutFileRandomPassword.visibility = View.GONE
+                layoutFileCustomPassword.visibility = View.VISIBLE
+            }
+        } catch (e: Exception) {
+            addDebugMessage("❌ Error toggling file password mode: ${e.message}")
+            showToast("Error switching password mode: ${e.message}")
         }
     }
 
@@ -902,180 +1488,47 @@ class SecureMessageActivity : AppCompatActivity() {
 
     private fun encryptWithPassword(message: String): String {
         val password = getCurrentPassword()
-        if (password.isEmpty()) {
-            throw RuntimeException("Enter password or use generated password!")
+        val expirationTime = if (switchEnableExpiration.isChecked) {
+            getSelectedExpirationTime()
+        } else {
+            0L
         }
-        return encryptPasswordBased(message, password)
+        
+        return messageCryptoService.encryptWithPassword(message, password, expirationTime)
+    }
+    
+    private fun getSelectedExpirationTime(): Long {
+        val selectedExpiration = expirationOptions[spinnerExpirationTime.selectedItemPosition]
+        return System.currentTimeMillis() + (selectedExpiration.second * 60 * 60 * 1000)
     }
 
     private fun encryptWithRSA(message: String): String {
         val recipientPublicKeyString = editTextRecipientPublicKey.text.toString().trim()
-        if (recipientPublicKeyString.isEmpty()) {
-            throw RuntimeException("Enter recipient's public key!")
+        
+        val useRSA4096 = radioRSA4096Mode.isChecked
+        val enablePFS = false // switchEnablePFS.isChecked // Not implemented yet
+        val enableSignatures = false // switchEnableSignatures.isChecked // Not implemented yet
+        val enableExpiration = switchEnableExpiration.isChecked
+        val expirationTime = if (enableExpiration) {
+            getSelectedExpirationTime()
+        } else {
+            0L
         }
-
-        try {
-            val keyFactory = KeyFactory.getInstance("RSA")
-            val publicKeyBytes = Base64.getDecoder().decode(recipientPublicKeyString)
-            val recipientPublicKey = keyFactory.generatePublic(X509EncodedKeySpec(publicKeyBytes))
-
-            return if (radioRSA4096Mode.isChecked) {
-                encryptRSA4096WithAESFull(message, recipientPublicKey)
-            } else {
-                encryptRSAWithAllFeatures(message, recipientPublicKey)
-            }
-        } catch (e: Exception) {
-            throw RuntimeException("Invalid public key: ${e.message}")
-        }
+        
+        val options = RSAEncryptionOptions(
+            useRSA4096 = useRSA4096,
+            enablePFS = enablePFS,
+            enableSignatures = enableSignatures,
+            enableExpiration = enableExpiration,
+            expirationTime = expirationTime
+        )
+        
+        return messageCryptoService.encryptWithRSA(message, recipientPublicKeyString, options)
     }
 
-    private fun encryptRSA4096WithAESFull(plaintext: String, recipientPublicKey: PublicKey): String {
-        try {
-            val secureRandom = SecureRandom()
 
-            var expirationTime = 0L
-            if (switchEnableExpiration.isChecked) {
-                val selectedExpiration = expirationOptions[spinnerExpirationTime.selectedItemPosition]
-                expirationTime = System.currentTimeMillis() + (selectedExpiration.second * 60 * 60 * 1000)
-            }
 
-            val masterAESKey = ByteArray(32)
-            secureRandom.nextBytes(masterAESKey)
 
-            val ecKeyGen = KeyPairGenerator.getInstance("EC")
-            ecKeyGen.initialize(ECGenParameterSpec("secp256r1"))
-            val ephemeralKeyPair = ecKeyGen.generateKeyPair()
-
-            val rsaCipher = getRSAOAEPCipher(Cipher.ENCRYPT_MODE, recipientPublicKey)
-            val encryptedMasterKey = rsaCipher.doFinal(masterAESKey)
-
-            val ephemeralPublicKeyBytes = ephemeralKeyPair.public.encoded
-            val combinedInput = masterAESKey + ephemeralPublicKeyBytes.take(32).toByteArray()
-
-            val digest = MessageDigest.getInstance("SHA-512")
-            val derivedKeyMaterial = digest.digest(combinedInput)
-            val finalAESKey = derivedKeyMaterial.sliceArray(0..31)
-
-            val iv = ByteArray(12)
-            secureRandom.nextBytes(iv)
-
-            val messageWithMetadata = createMessageWithMetadataFixed(plaintext, expirationTime, ephemeralKeyPair)
-
-            val aesCipher = Cipher.getInstance("AES/GCM/NoPadding")
-            val finalAESKeySpec = SecretKeySpec(finalAESKey, "AES")
-            val gcmSpec = GCMParameterSpec(128, iv)
-
-            aesCipher.init(Cipher.ENCRYPT_MODE, finalAESKeySpec, gcmSpec)
-            val encryptedMessage = aesCipher.doFinal(messageWithMetadata.toByteArray(Charsets.UTF_8))
-
-            var signature: ByteArray? = null
-            if (keyPair?.private != null) {
-                val sig = Signature.getInstance("SHA512withRSA")
-                sig.initSign(keyPair!!.private)
-                sig.update(messageWithMetadata.toByteArray(Charsets.UTF_8))
-                signature = sig.sign()
-            }
-
-            val outputStream = ByteArrayOutputStream()
-
-            outputStream.write(VERSION_BYTE_RSA_4096_AES_FULL.toInt())
-
-            writeInt32(outputStream, encryptedMasterKey.size)
-            outputStream.write(encryptedMasterKey)
-
-            outputStream.write(iv)
-
-            writeInt32(outputStream, ephemeralPublicKeyBytes.size)
-            outputStream.write(ephemeralPublicKeyBytes)
-
-            if (signature != null) {
-                writeInt32(outputStream, signature.size)
-                outputStream.write(signature)
-            } else {
-                writeInt32(outputStream, 0)
-            }
-
-            outputStream.write(encryptedMessage)
-
-            return Base64.getEncoder().encodeToString(outputStream.toByteArray())
-
-        } catch (e: Exception) {
-            throw RuntimeException("RSA-4096 + AES-256-GCM (full) encryption failed: ${e.message}", e)
-        }
-    }
-
-    private fun encryptRSAWithAllFeatures(plaintext: String, recipientPublicKey: PublicKey): String {
-        try {
-            val random = SecureRandom()
-
-            var expirationTime = 0L
-            if (switchEnableExpiration.isChecked) {
-                val selectedExpiration = expirationOptions[spinnerExpirationTime.selectedItemPosition]
-                expirationTime = System.currentTimeMillis() + (selectedExpiration.second * 60 * 60 * 1000)
-            }
-
-            val keyGenerator = KeyGenerator.getInstance("AES")
-            keyGenerator.init(AES_KEY_SIZE)
-            val originalAESKey = keyGenerator.generateKey()
-
-            val ecKeyGen = KeyPairGenerator.getInstance("EC")
-            ecKeyGen.initialize(ECGenParameterSpec("secp256r1"))
-            val ephemeralKeyPair = ecKeyGen.generateKeyPair()
-
-            val rsaCipher = Cipher.getInstance("RSA/ECB/OAEPWITHSHA-256ANDMGF1PADDING")
-            rsaCipher.init(Cipher.ENCRYPT_MODE, recipientPublicKey)
-            val encryptedAESKey = rsaCipher.doFinal(originalAESKey.encoded)
-
-            val iv = ByteArray(IV_SIZE)
-            random.nextBytes(iv)
-
-            val messageWithMetadata = createMessageWithMetadata(plaintext, expirationTime, ephemeralKeyPair)
-
-            val ephemeralKeyBytes = ephemeralKeyPair.public.encoded.take(32).toByteArray()
-            val combinedKeyMaterial = originalAESKey.encoded + ephemeralKeyBytes
-            val digest = MessageDigest.getInstance("SHA-256")
-            val derivedKey = digest.digest(combinedKeyMaterial)
-            val finalAESKey = SecretKeySpec(derivedKey, "AES")
-
-            val aesCipher = Cipher.getInstance("AES/GCM/NoPadding")
-            val gcmSpec = GCMParameterSpec(GCM_TAG_LENGTH * 8, iv)
-            aesCipher.init(Cipher.ENCRYPT_MODE, finalAESKey, gcmSpec)
-            val encryptedMessage = aesCipher.doFinal(messageWithMetadata.toByteArray(Charsets.UTF_8))
-
-            var signature: ByteArray? = null
-            if (keyPair?.private != null) {
-                signature = createDigitalSignature(messageWithMetadata, keyPair!!.private)
-            }
-
-            val outputStream = ByteArrayOutputStream()
-            outputStream.write(VERSION_BYTE_RSA_ALL.toInt())
-            outputStream.write(encryptedAESKey.size and 0xFF)
-            outputStream.write((encryptedAESKey.size shr 8) and 0xFF)
-            outputStream.write(encryptedAESKey)
-            outputStream.write(iv)
-
-            if (signature != null) {
-                outputStream.write(signature.size and 0xFF)
-                outputStream.write((signature.size shr 8) and 0xFF)
-                outputStream.write(signature)
-            } else {
-                outputStream.write(0)
-                outputStream.write(0)
-            }
-
-            val ephemeralPublicKeyBytes = ephemeralKeyPair.public.encoded
-            outputStream.write(ephemeralPublicKeyBytes.size and 0xFF)
-            outputStream.write((ephemeralPublicKeyBytes.size shr 8) and 0xFF)
-            outputStream.write(ephemeralPublicKeyBytes)
-
-            outputStream.write(encryptedMessage)
-
-            return Base64.getEncoder().encodeToString(outputStream.toByteArray())
-
-        } catch (e: Exception) {
-            throw RuntimeException("RSA encryption with all features failed: ${e.message}", e)
-        }
-    }
 
     private fun getRSAOAEPCipher(mode: Int, key: Key): Cipher {
         return try {
@@ -1095,12 +1548,7 @@ class SecureMessageActivity : AppCompatActivity() {
         }
     }
 
-    private fun writeInt32(outputStream: ByteArrayOutputStream, value: Int) {
-        outputStream.write(value and 0xFF)
-        outputStream.write((value shr 8) and 0xFF)
-        outputStream.write((value shr 16) and 0xFF)
-        outputStream.write((value shr 24) and 0xFF)
-    }
+
 
     private fun readInt32(data: ByteArray, offset: Int): Int {
         if (offset + 4 > data.size) {
@@ -1112,12 +1560,6 @@ class SecureMessageActivity : AppCompatActivity() {
                 ((data[offset + 3].toInt() and 0xFF) shl 24)
     }
 
-    private fun createDigitalSignature(message: String, privateKey: PrivateKey): ByteArray {
-        val signature = Signature.getInstance("SHA256withRSA")
-        signature.initSign(privateKey)
-        signature.update(message.toByteArray(Charsets.UTF_8))
-        return signature.sign()
-    }
 
     private fun verifyDigitalSignature(message: String, signatureBytes: ByteArray, publicKey: PublicKey): Boolean {
         return try {
@@ -1283,56 +1725,33 @@ class SecureMessageActivity : AppCompatActivity() {
                 return
             }
 
-            val encryptedData = Base64.getDecoder().decode(encryptedMessage)
-            val version = encryptedData[0]
-
-            val decryptedMessage = when (version) {
-                VERSION_BYTE_PASSWORD -> {
-                    val password = editTextDecryptPassword.text.toString().trim()
-                    if (password.isEmpty()) {
-                        recordFailedAttempt()
-                        throw RuntimeException("Enter password!")
-                    }
-                    try {
-                        val result = decryptPasswordBased(encryptedMessage, password)
-                        resetFailedAttempts()
-                        result
-                    } catch (e: Exception) {
-                        recordFailedAttempt()
-                        throw e
-                    }
+            // Get password and keyPair for decryption
+            val password = editTextDecryptPassword.text.toString().trim().takeIf { it.isNotEmpty() }
+            
+            val decryptionResult = try {
+                // Use MessageCryptoService for clean decryption logic
+                val result = messageCryptoService.decryptMessage(encryptedMessage, password, keyPair)
+                
+                // Reset failed attempts on successful password-based decryption
+                if (result.metadata.encryptionMethod == EncryptionMethod.PASSWORD) {
+                    resetFailedAttempts()
                 }
-                VERSION_BYTE_RSA -> {
-                    if (keyPair?.private == null) {
-                        throw RuntimeException("Private key missing for decryption!")
-                    }
-                    decryptRSABased(encryptedMessage, keyPair!!.private)
+                
+                result
+            } catch (e: Exception) {
+                // Record failed attempts for password-based decryption
+                if (password != null) {
+                    recordFailedAttempt()
                 }
-                VERSION_BYTE_RSA_EXPIRING -> {
-                    if (keyPair?.private == null) {
-                        throw RuntimeException("Private key missing for decryption!")
-                    }
-                    decryptRSABasedWithExpiration(encryptedMessage, keyPair!!.private)
-                }
-                VERSION_BYTE_RSA_SIGNED,
-                VERSION_BYTE_RSA_PFS,
-                VERSION_BYTE_RSA_SIGNED_PFS,
-                VERSION_BYTE_RSA_ALL -> {
-                    if (keyPair?.private == null) {
-                        throw RuntimeException("Private key missing for decryption!")
-                    }
-                    decryptRSAWithFeatures(encryptedMessage, keyPair!!.private, version)
-                }
-                VERSION_BYTE_RSA_4096_AES_FULL -> {
-                    if (keyPair?.private == null) {
-                        throw RuntimeException("Private key missing for decryption!")
-                    }
-                    decryptRSA4096WithAESFull(encryptedMessage, keyPair!!.private)
-                }
-                else -> throw RuntimeException("Unknown encryption version: $version")
+                throw e
             }
 
-            textViewDecrypted.text = decryptedMessage
+            textViewDecrypted.text = decryptionResult.message
+            currentlyDecryptedMessage = decryptionResult.message
+
+            // Check if burn after reading is enabled from the metadata
+            burnAfterReadingEnabled = checkIfBurnAfterReadingEnabled(lastDecryptedMetadata)
+
             showToast("Message decrypted successfully!")
         } catch (e: Exception) {
             if (e.message?.contains("expired") == true) {
@@ -1341,6 +1760,20 @@ class SecureMessageActivity : AppCompatActivity() {
                 showToast("Decryption failed: ${e.message}")
                 textViewDecrypted.text = "Decryption failed"
             }
+        }
+    }
+
+    private fun checkIfBurnAfterReadingEnabled(metadata: String?): Boolean {
+        return try {
+            metadata?.let {
+                if (it.contains("\"burn\":\"true\"") || it.contains("burn=true")) {
+                    true
+                } else {
+                    false
+                }
+            } ?: false
+        } catch (e: Exception) {
+            false
         }
     }
 
@@ -1403,18 +1836,14 @@ class SecureMessageActivity : AppCompatActivity() {
             val messageText = String(decryptedData, Charsets.UTF_8)
             addToSensitiveList(messageText)
 
-            val metadata = parseMessageMetadataFixed(messageText)
+            // Metadata parsing removed - will be handled in FileEncryptionService later
+            val metadata: Map<String, Any>? = null
             val finalMessage = if (metadata != null) {
                 val expirationTime = metadata["exp"] as? Long
                 if (expirationTime != null && System.currentTimeMillis() > expirationTime) {
                     secureClearAllSensitiveData()
                     val expiredDate = SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.getDefault()).format(Date(expirationTime))
                     throw RuntimeException("Message has expired ($expiredDate)")
-                }
-
-                val burnAfterReading = metadata["burn"] as? Boolean ?: false
-                if (burnAfterReading) {
-                    showBurnAfterReadingDialog()
                 }
 
                 val msg = metadata["msg"] as String
@@ -1471,91 +1900,7 @@ class SecureMessageActivity : AppCompatActivity() {
         }
     }
 
-    private fun parseMessageMetadata(messageWithMetadata: String): Map<String, Any>? {
-        return try {
-            addToSensitiveList(messageWithMetadata)
-            lastDecryptedMetadata = messageWithMetadata
 
-            if (!messageWithMetadata.startsWith("META:") || !messageWithMetadata.contains(":ENDMETA")) {
-                return mapOf("msg" to messageWithMetadata)
-            }
-
-            val metadataString = messageWithMetadata.substring(5, messageWithMetadata.indexOf(":ENDMETA"))
-            val metadata = mutableMapOf<String, Any>()
-
-            metadataString.split("|").forEach { pair ->
-                val (key, value) = pair.split("=", limit = 2)
-                metadata[key] = when (key) {
-                    "exp", "created" -> value.toLong()
-                    "burn" -> value.toBoolean()
-                    else -> value
-                }
-            }
-
-            addToSensitiveList(metadataString)
-            metadata
-        } catch (e: Exception) {
-            null
-        }
-    }
-
-    private fun parseMessageMetadataFixed(messageWithMetadata: String): Map<String, Any>? {
-        return try {
-            addToSensitiveList(messageWithMetadata)
-            lastDecryptedMetadata = messageWithMetadata
-
-            if (messageWithMetadata.startsWith("{") && messageWithMetadata.endsWith("}")) {
-                val metadata = mutableMapOf<String, Any>()
-                val jsonContent = messageWithMetadata.substring(1, messageWithMetadata.length - 1)
-
-                jsonContent.split(",").forEach { pair ->
-                    val parts = pair.split(":", limit = 2)
-                    if (parts.size == 2) {
-                        val key = parts[0].trim().removeSurrounding("\"")
-                        val value = parts[1].trim().removeSurrounding("\"")
-
-                        metadata[key] = when (key) {
-                            "exp", "created" -> value.toLongOrNull() ?: 0L
-                            "burn", "pfs" -> value.toBooleanStrictOrNull() ?: false
-                            else -> value
-                        }
-                    }
-                }
-
-                addToSensitiveList(jsonContent)
-                metadata
-            } else {
-                parseOldMetadataFormat(messageWithMetadata)
-            }
-        } catch (e: Exception) {
-            mapOf("msg" to messageWithMetadata)
-        }
-    }
-
-    private fun parseOldMetadataFormat(messageWithMetadata: String): Map<String, Any>? {
-        return if (messageWithMetadata.startsWith("META:") && messageWithMetadata.contains(":ENDMETA")) {
-            val metadataString = messageWithMetadata.substring(5, messageWithMetadata.indexOf(":ENDMETA"))
-            val metadata = mutableMapOf<String, Any>()
-
-            metadataString.split("|").forEach { pair ->
-                val parts = pair.split("=", limit = 2)
-                if (parts.size == 2) {
-                    val key = parts[0]
-                    val value = parts[1]
-                    metadata[key] = when (key) {
-                        "exp", "created" -> value.toLongOrNull() ?: 0L
-                        "burn" -> value.toBooleanStrictOrNull() ?: false
-                        else -> value
-                    }
-                }
-            }
-
-            addToSensitiveList(metadataString)
-            metadata
-        } else {
-            mapOf("msg" to messageWithMetadata)
-        }
-    }
 
     private fun decryptRSAWithFeatures(encryptedText: String, privateKey: PrivateKey, version: Byte): String {
         try {
@@ -1658,18 +2003,14 @@ class SecureMessageActivity : AppCompatActivity() {
                 val messageText = String(decryptedData, Charsets.UTF_8)
                 addToSensitiveList(messageText)
 
-                val metadata = parseMessageMetadata(messageText)
+                // Metadata parsing removed - will be handled in FileEncryptionService later
+                val metadata: Map<String, Any>? = null
                 val finalMessage = if (metadata != null) {
                     val expirationTime = metadata["exp"] as? Long
                     if (expirationTime != null && System.currentTimeMillis() > expirationTime) {
                         secureClearAllSensitiveData()
                         val expiredDate = SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.getDefault()).format(Date(expirationTime))
                         throw RuntimeException("Message has expired ($expiredDate)")
-                    }
-
-                    val burnAfterReading = metadata["burn"] as? Boolean ?: false
-                    if (burnAfterReading) {
-                        showBurnAfterReadingDialog()
                     }
 
                     val msg = metadata["msg"] as String
@@ -1728,220 +2069,8 @@ class SecureMessageActivity : AppCompatActivity() {
         }
     }
 
-    private fun decryptRSABasedWithExpiration(encryptedText: String, privateKey: PrivateKey): String {
-        try {
-            val encryptedData = Base64.getDecoder().decode(encryptedText)
-            var offset = 1
 
-            val aesKeySize = (encryptedData[offset].toInt() and 0xFF) or
-                    ((encryptedData[offset + 1].toInt() and 0xFF) shl 8)
-            offset += 2
 
-            val encryptedAESKey = encryptedData.copyOfRange(offset, offset + aesKeySize)
-            offset += aesKeySize
-
-            val iv = encryptedData.copyOfRange(offset, offset + IV_SIZE)
-            offset += IV_SIZE
-
-            val encryptedMessage = encryptedData.copyOfRange(offset, encryptedData.size)
-
-            val rsaCipher = Cipher.getInstance("RSA/ECB/OAEPWITHSHA-256ANDMGF1PADDING")
-            rsaCipher.init(Cipher.DECRYPT_MODE, privateKey)
-            val aesKeyBytes = rsaCipher.doFinal(encryptedAESKey)
-            val aesKey = SecretKeySpec(aesKeyBytes, "AES")
-
-            val aesCipher = Cipher.getInstance("AES/GCM/NoPadding")
-            val gcmSpec = GCMParameterSpec(GCM_TAG_LENGTH * 8, iv)
-            aesCipher.init(Cipher.DECRYPT_MODE, aesKey, gcmSpec)
-            val decryptedData = aesCipher.doFinal(encryptedMessage)
-
-            val messageWithMetadata = String(decryptedData, Charsets.UTF_8)
-            val metadata = parseMessageMetadata(messageWithMetadata)
-
-            if (metadata != null) {
-                val expirationTime = metadata["exp"] as? Long
-                if (expirationTime != null && System.currentTimeMillis() > expirationTime) {
-                    val expiredDate = SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.getDefault()).format(Date(expirationTime))
-                    throw RuntimeException("Message has expired ($expiredDate)")
-                }
-
-                val burnAfterReading = metadata["burn"] as? Boolean ?: false
-                if (burnAfterReading) {
-                    showBurnAfterReadingDialog()
-                }
-
-                return metadata["msg"] as String
-            }
-
-            return messageWithMetadata
-
-        } catch (e: Exception) {
-            throw RuntimeException("RSA decryption with expiring message failed: ${e.message}")
-        }
-    }
-
-    private fun decryptRSABased(encryptedText: String, privateKey: PrivateKey): String {
-        try {
-            val encryptedData = Base64.getDecoder().decode(encryptedText)
-            var offset = 1
-
-            val aesKeySize = (encryptedData[offset].toInt() and 0xFF) or
-                    ((encryptedData[offset + 1].toInt() and 0xFF) shl 8)
-            offset += 2
-
-            val encryptedAESKey = encryptedData.copyOfRange(offset, offset + aesKeySize)
-            offset += aesKeySize
-
-            val iv = encryptedData.copyOfRange(offset, offset + IV_SIZE)
-            offset += IV_SIZE
-
-            val encryptedMessage = encryptedData.copyOfRange(offset, encryptedData.size)
-
-            val rsaCipher = Cipher.getInstance("RSA/ECB/OAEPWITHSHA-256ANDMGF1PADDING")
-            rsaCipher.init(Cipher.DECRYPT_MODE, privateKey)
-            val aesKeyBytes = rsaCipher.doFinal(encryptedAESKey)
-            val aesKey = SecretKeySpec(aesKeyBytes, "AES")
-
-            val aesCipher = Cipher.getInstance("AES/GCM/NoPadding")
-            val gcmSpec = GCMParameterSpec(GCM_TAG_LENGTH * 8, iv)
-            aesCipher.init(Cipher.DECRYPT_MODE, aesKey, gcmSpec)
-            val decryptedData = aesCipher.doFinal(encryptedMessage)
-
-            return String(decryptedData, Charsets.UTF_8)
-
-        } catch (e: Exception) {
-            throw RuntimeException("RSA decryption failed", e)
-        }
-    }
-
-    private fun encryptPasswordBased(plaintext: String, password: String): String {
-        try {
-            val random = SecureRandom()
-
-            var expirationTime = 0L
-            if (switchEnableExpiration.isChecked) {
-                val selectedExpiration = expirationOptions[spinnerExpirationTime.selectedItemPosition]
-                expirationTime = System.currentTimeMillis() + (selectedExpiration.second * 60 * 60 * 1000)
-            }
-
-            val messageWithMetadata = createMessageWithMetadata(plaintext, expirationTime, null)
-
-            val masterSalt = ByteArray(SALT_SIZE)
-            val encryptionSalt = ByteArray(SALT_SIZE)
-            val macSalt = ByteArray(SALT_SIZE)
-            val iv = ByteArray(IV_SIZE)
-
-            random.nextBytes(masterSalt)
-            random.nextBytes(encryptionSalt)
-            random.nextBytes(macSalt)
-            random.nextBytes(iv)
-
-            val encryptionKey = generateSecureKey(password, encryptionSalt, ITERATION_COUNT)
-            val macKey = generateSecureKey(password, macSalt, ITERATION_COUNT)
-
-            val keySpec = SecretKeySpec(encryptionKey, "AES")
-            val cipher = Cipher.getInstance("AES/GCM/NoPadding")
-            val gcmSpec = GCMParameterSpec(GCM_TAG_LENGTH * 8, iv)
-            cipher.init(Cipher.ENCRYPT_MODE, keySpec, gcmSpec)
-
-            val encryptedData = cipher.doFinal(messageWithMetadata.toByteArray(Charsets.UTF_8))
-
-            val outputStream = ByteArrayOutputStream()
-            outputStream.write(VERSION_BYTE_PASSWORD.toInt())
-            outputStream.write(masterSalt)
-            outputStream.write(encryptionSalt)
-            outputStream.write(macSalt)
-            outputStream.write(iv)
-            outputStream.write(encryptedData)
-
-            val dataToMac = outputStream.toByteArray()
-            val hmac = generateHMAC(dataToMac, macKey)
-            outputStream.write(hmac)
-
-            return Base64.getEncoder().encodeToString(outputStream.toByteArray())
-
-        } catch (e: Exception) {
-            throw RuntimeException("Encryption failed", e)
-        }
-    }
-
-    private fun decryptPasswordBased(encryptedText: String, password: String): String {
-        try {
-            val encryptedData = Base64.getDecoder().decode(encryptedText)
-
-            if (encryptedData.size < 1 + SALT_SIZE * 3 + IV_SIZE + MAC_SIZE + GCM_TAG_LENGTH) {
-                throw RuntimeException("Invalid data size")
-            }
-
-            var offset = 0
-
-            val version = encryptedData[offset]
-            if (version != VERSION_BYTE_PASSWORD) {
-                throw RuntimeException("Wrong version for password-based decryption")
-            }
-            offset += 1
-
-            val masterSalt = encryptedData.copyOfRange(offset, offset + SALT_SIZE)
-            offset += SALT_SIZE
-
-            val encryptionSalt = encryptedData.copyOfRange(offset, offset + SALT_SIZE)
-            offset += SALT_SIZE
-
-            val macSalt = encryptedData.copyOfRange(offset, offset + SALT_SIZE)
-            offset += SALT_SIZE
-
-            val iv = encryptedData.copyOfRange(offset, offset + IV_SIZE)
-            offset += IV_SIZE
-
-            val encryptedContent = encryptedData.copyOfRange(offset, encryptedData.size - MAC_SIZE)
-            val receivedMac = encryptedData.copyOfRange(encryptedData.size - MAC_SIZE, encryptedData.size)
-
-            val encryptionKey = generateSecureKey(password, encryptionSalt, ITERATION_COUNT)
-            val macKey = generateSecureKey(password, macSalt, ITERATION_COUNT)
-
-            val dataToVerify = encryptedData.copyOfRange(0, encryptedData.size - MAC_SIZE)
-            if (!verifyHMAC(dataToVerify, receivedMac, macKey)) {
-                throw RuntimeException("HMAC verification failed")
-            }
-
-            val keySpec = SecretKeySpec(encryptionKey, "AES")
-            val cipher = Cipher.getInstance("AES/GCM/NoPadding")
-            val gcmSpec = GCMParameterSpec(GCM_TAG_LENGTH * 8, iv)
-            cipher.init(Cipher.DECRYPT_MODE, keySpec, gcmSpec)
-
-            val decryptedData = cipher.doFinal(encryptedContent)
-
-            val messageWithMetadata = String(decryptedData, Charsets.UTF_8)
-
-            addToSensitiveList(messageWithMetadata)
-            addToSensitiveList(password)
-
-            val metadata = parseMessageMetadata(messageWithMetadata)
-            if (metadata != null) {
-                val expirationTime = metadata["exp"] as? Long
-                if (expirationTime != null && System.currentTimeMillis() > expirationTime) {
-                    secureClearAllSensitiveData()
-                    val expiredDate = SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.getDefault()).format(Date(expirationTime))
-                    throw RuntimeException("Message has expired ($expiredDate)")
-                }
-
-                val burnAfterReading = metadata["burn"] as? Boolean ?: false
-                if (burnAfterReading) {
-                    showBurnAfterReadingDialog()
-                }
-
-                val finalMessage = metadata["msg"] as String
-                addToSensitiveList(finalMessage)
-                return finalMessage
-            }
-
-            return messageWithMetadata
-
-        } catch (e: Exception) {
-            secureClearAllSensitiveData()
-            throw RuntimeException("Decryption failed", e)
-        }
-    }
 
     private fun encryptMessageToFile() {
         try {
@@ -2018,6 +2147,7 @@ class SecureMessageActivity : AppCompatActivity() {
                         VERSION_BYTE_RSA_SIGNED_PFS -> "RSA key encrypted (signed + PFS)"
                         VERSION_BYTE_RSA_ALL -> "RSA key encrypted (maximum security)"
                         VERSION_BYTE_RSA_4096_AES_FULL -> "RSA-4096 + AES-256-GCM (MAXIMUM)"
+                        VERSION_BYTE_FILE_ENCRYPTED -> "encrypted file"
                         else -> "unknown"
                     }
                     showToast("$modeText file loaded!")
@@ -2089,7 +2219,7 @@ class SecureMessageActivity : AppCompatActivity() {
 
             nuclearSecurityWipe()
 
-            sharedPreferences.edit()
+            encryptedPreferences.edit()
                 .remove(KEY_PUBLIC_KEY_2048)
                 .remove(KEY_PRIVATE_KEY_2048)
                 .remove(KEY_PUBLIC_KEY_4096)
@@ -2157,6 +2287,42 @@ class SecureMessageActivity : AppCompatActivity() {
             textViewPassword.text = generatedPassword
         }
     }
+    
+    private fun generateFilePassword() {
+        try {
+            // Use same generated password system
+            if (generatedPassword.isNotEmpty()) {
+                secureWipeString(generatedPassword)
+            }
+            
+            generatedPassword = generateRandomPassword(24)
+            textViewFilePassword.text = generatedPassword
+        } catch (e: Exception) {
+            showToast("File password generation failed: ${e.message}")
+            generatedPassword = "GENERATION_ERROR"
+            textViewFilePassword.text = generatedPassword
+        }
+    }
+
+    private fun copyFilePasswordToClipboard() {
+        try {
+            val password = if (switchFileRandomPassword.isChecked) {
+                generatedPassword
+            } else {
+                editTextFileCustomPassword.text.toString()
+            }
+            
+            if (password.isNotEmpty()) {
+                copyToClipboardSecurely(password, "File password", true)
+                addToSensitiveList(password)
+            } else {
+                showToast("No file password to copy!")
+            }
+        } catch (e: Exception) {
+            showToast("Copy failed: ${e.message}")
+            addDebugMessage("❌ File password copy failed: ${e.message}")
+        }
+    }
 
     private fun generateRandomPassword(length: Int): String {
         val chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%^&*"
@@ -2213,6 +2379,17 @@ class SecureMessageActivity : AppCompatActivity() {
                 generatedPassword = ""
             }
 
+            // Clear burn after reading message if screen is hidden
+            if (burnAfterReadingEnabled && currentlyDecryptedMessage != null) {
+                currentlyDecryptedMessage?.let { message ->
+                    secureWipeString(message)
+                }
+                currentlyDecryptedMessage = null
+                textViewDecrypted.text = "[MESSAGE DESTROYED - BURN AFTER READING]"
+                burnAfterReadingEnabled = false
+                showToast("🔥 Self-destructing message destroyed on screen hide")
+            }
+
             secureClearAllSensitiveData()
 
         } catch (e: Exception) {
@@ -2227,6 +2404,9 @@ class SecureMessageActivity : AppCompatActivity() {
 
         try {
             keyPair = null
+            selectedFileUri = null
+            temporaryEncryptedData = null
+            temporaryDecryptedFileData = null
 
             val allFields = this::class.java.declaredFields
 
@@ -2314,26 +2494,83 @@ class SecureMessageActivity : AppCompatActivity() {
         }
     }
 
+    private fun startDelayedFieldClearance() {
+        // Peruuta aiempi ajastin jos sellainen on
+        cancelDelayedFieldClearance()
+        
+        delayedClearRunnable = Runnable {
+            try {
+                // Tyhjennä tekstikentät 5 minuutin jälkeen
+                editTextMessage.text.clear()
+                editTextEncrypted.text.clear()
+                clearPasswordFieldSecurely(editTextDecryptPassword)
+                clearPasswordFieldSecurely(editTextCustomPassword)
+                textViewDecrypted.text = ""
+                
+                if (generatedPassword.isNotEmpty()) {
+                    secureWipeString(generatedPassword)
+                    generatedPassword = ""
+                    textViewPassword.text = "Generate new password"
+                }
+                
+                secureClearAllSensitiveData()
+                
+                showToast("🕒 Text fields cleared after 5 minutes of inactivity")
+                
+            } catch (e: Exception) {
+                // Turvallinen virheenkäsittely
+            }
+        }
+        
+        // Käynnistä ajastin (5 minuuttia = 300000 millisekuntia)
+        delayedClearHandler.postDelayed(delayedClearRunnable!!, 300000)
+    }
+    
+    private fun cancelDelayedFieldClearance() {
+        delayedClearRunnable?.let { runnable ->
+            delayedClearHandler.removeCallbacks(runnable)
+        }
+        delayedClearRunnable = null
+    }
+
     override fun onDestroy() {
         super.onDestroy()
 
         nuclearSecurityWipe()
+        
+        // Clean up security services
+        if (::securityServices.isInitialized) {
+            securityServices.cleanup()
+        }
 
         clearClipboardHandler.removeCallbacksAndMessages(null)
+        delayedClearHandler.removeCallbacksAndMessages(null)
     }
 
     override fun onPause() {
         super.onPause()
 
-        emergencySecurityWipe()
+        // Käynnistä 5 minuutin ajastin tekstikenttien tyhjentämiseen
+        startDelayedFieldClearance()
     }
 
     override fun onStop() {
         super.onStop()
 
         try {
+            // Piilota vain näkyvät kentät, mutta älä tyhjennä niitä
             textViewDecrypted.text = "[HIDDEN FOR SECURITY REASONS]"
             textViewPassword.text = "●●●●●●●●●●●●"
+
+            // Destroy burn after reading message when app goes to background (säilytetään)
+            if (burnAfterReadingEnabled && currentlyDecryptedMessage != null) {
+                currentlyDecryptedMessage?.let { message ->
+                    secureWipeString(message)
+                }
+                currentlyDecryptedMessage = null
+                textViewDecrypted.text = "[MESSAGE DESTROYED - BURN AFTER READING]"
+                burnAfterReadingEnabled = false
+            }
 
         } catch (e: Exception) {
         }
@@ -2343,6 +2580,9 @@ class SecureMessageActivity : AppCompatActivity() {
         super.onResume()
 
         try {
+            // Peruuta viivästetty kenttien tyhjennys kun sovellus palaa
+            cancelDelayedFieldClearance()
+            
             if (isAppLocked()) {
                 showLockoutMessage()
                 return
@@ -2352,7 +2592,13 @@ class SecureMessageActivity : AppCompatActivity() {
                 loadKeyPairForCurrentMode()
             }
 
+            // Palauta salasananäyttö jos se on piilotettu
+            if (textViewPassword.text == "●●●●●●●●●●●●" && generatedPassword.isNotEmpty()) {
+                textViewPassword.text = generatedPassword
+            }
+
             updateRSAStatus()
+            updateSelectedFileDisplay()
         } catch (e: Exception) {
         }
     }
@@ -2378,5 +2624,331 @@ class SecureMessageActivity : AppCompatActivity() {
 
     override fun onUserLeaveHint() {
         super.onUserLeaveHint()
+
+        // Trigger burn after reading when user leaves the app
+        if (burnAfterReadingEnabled && currentlyDecryptedMessage != null) {
+            currentlyDecryptedMessage?.let { message ->
+                secureWipeString(message)
+            }
+            currentlyDecryptedMessage = null
+            textViewDecrypted.text = "[MESSAGE DESTROYED - BURN AFTER READING]"
+            burnAfterReadingEnabled = false
+            showToast("🔥 Self-destructing message destroyed")
+        }
     }
+
+    private fun setupTabNavigation() {
+        if (tabLayoutSecure.tabCount == 0) {
+            tabLayoutSecure.addTab(tabLayoutSecure.newTab().setText("📚 Instructions"))
+            tabLayoutSecure.addTab(tabLayoutSecure.newTab().setText("🔒 Encrypt text"))
+            tabLayoutSecure.addTab(tabLayoutSecure.newTab().setText("🔓 Decrypt text"))
+            tabLayoutSecure.addTab(tabLayoutSecure.newTab().setText("📁 File encryption"))
+        }
+        showInstructionsTab()
+        tabLayoutSecure.getTabAt(0)?.select()
+
+        tabLayoutSecure.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
+            override fun onTabSelected(tab: TabLayout.Tab) {
+                when (tab.position) {
+                    0 -> showInstructionsTab()
+                    1 -> showEncryptTab()
+                    2 -> showDecryptTab()
+                    3 -> showFileEncryptionTab()
+                }
+            }
+            override fun onTabUnselected(tab: TabLayout.Tab) { /* no-op */ }
+            override fun onTabReselected(tab: TabLayout.Tab) { /* no-op */ }
+        })
+    }
+
+    private fun showEncryptTab() {
+        viewEncryptTab.visibility = View.VISIBLE
+        viewDecryptTab.visibility = View.GONE
+        viewFileEncryptionTab.visibility = View.GONE
+        viewInstructionsTab.visibility = View.GONE
+        cardViewEncryptedMessage.visibility = View.VISIBLE
+    }
+
+    private fun showDecryptTab() {
+        viewEncryptTab.visibility = View.GONE
+        viewDecryptTab.visibility = View.VISIBLE
+        viewFileEncryptionTab.visibility = View.GONE
+        viewInstructionsTab.visibility = View.GONE
+        cardViewEncryptedMessage.visibility = View.VISIBLE
+    }
+
+
+    private fun showFileEncryptionTab() {
+        viewEncryptTab.visibility = View.GONE
+        viewDecryptTab.visibility = View.GONE
+        viewFileEncryptionTab.visibility = View.VISIBLE
+        viewInstructionsTab.visibility = View.GONE
+        cardViewEncryptedMessage.visibility = View.GONE
+        
+        // Initialize File encryption UI state (UPDATED FOR CARDS)
+        if (radioFilePasswordMode.isChecked) {
+            findViewById<androidx.cardview.widget.CardView>(R.id.cardFilePasswordSettings).visibility = View.VISIBLE
+            findViewById<androidx.cardview.widget.CardView>(R.id.cardFileRSAManagement).visibility = View.GONE
+            layoutFileRSAManagement.visibility = View.GONE
+        } else {
+            findViewById<androidx.cardview.widget.CardView>(R.id.cardFilePasswordSettings).visibility = View.GONE
+            findViewById<androidx.cardview.widget.CardView>(R.id.cardFileRSAManagement).visibility = View.VISIBLE
+            layoutFileRSAManagement.visibility = View.VISIBLE
+        }
+        
+        // Load and sync RSA key for File Encryption
+        if (keyPair == null) {
+            loadKeyPairForFileEncryption()
+        }
+        updateFileEncryptionPublicKey()
+    }
+    
+    private fun loadKeyPairForFileEncryption() {
+        val mode = if (radioFileRSA4096Mode.isChecked) "RSA-4096" else "RSA-2048"
+        addDebugMessage("🔄 Loading key pair for File Encryption mode: $mode")
+        try {
+            loadKeyPairForFileMode()
+            // Update RSA status and public key display for file encryption
+            updateFileEncryptionRSAStatus()
+            updateFileEncryptionPublicKey()
+        } catch (e: Exception) {
+            addDebugMessage("❌ File encryption mode switch failed: ${e.message}")
+            showToast("File encryption mode switch failed: ${e.message}")
+        }
+    }
+    
+    private fun loadKeyPairForFileMode() {
+        addDebugMessage("🔄 Starting loadKeyPairForFileMode()")
+        try {
+            val useRSA4096 = radioFileRSA4096Mode.isChecked
+            val loadedKeyPair = cryptoManager.loadKeyPair(useRSA4096)
+            
+            if (loadedKeyPair != null) {
+                keyPair = loadedKeyPair
+                val modeText = if (useRSA4096) "RSA-4096" else "RSA-2048"
+                addDebugMessage("✅ $modeText key pair loaded successfully for file encryption!")
+                showToast("✅ $modeText key pair loaded for file encryption")
+            } else {
+                addDebugMessage("❌ No key pair found - setting keyPair to null")
+                keyPair = null
+                textViewFilePublicKey.text = "No ${if (useRSA4096) "RSA-4096" else "RSA-2048"} key generated"
+            }
+
+        } catch (e: Exception) {
+            val errorMsg = "❌ File encryption key loading failed: ${e.javaClass.simpleName}: ${e.message}"
+            addDebugMessage(errorMsg)
+            showToast("❌ File encryption key pair loading failed: ${e.message}")
+            
+            keyPair = null
+            textViewFilePublicKey.text = "No ${if (radioFileRSA4096Mode.isChecked) "RSA-4096" else "RSA-2048"} key generated"
+        }
+    }
+    
+    private fun updateFileEncryptionRSAStatus() {
+        try {
+            keyPair?.let {
+                val keySize = if (radioFileRSA4096Mode.isChecked) "RSA-4096" else "RSA-2048"
+                textViewFileRSAStatus.text = "✅ $keySize key pair ready"
+                textViewFileRSAStatus.setTextColor(resources.getColor(android.R.color.holo_green_dark, theme))
+            } ?: run {
+                val keySize = if (radioFileRSA4096Mode.isChecked) "RSA-4096" else "RSA-2048"
+                textViewFileRSAStatus.text = "⚠ No $keySize key pair - create a key pair first"
+                textViewFileRSAStatus.setTextColor(resources.getColor(android.R.color.holo_orange_light, theme))
+            }
+        } catch (e: Exception) {
+            textViewFileRSAStatus.text = "❌ Error updating RSA status: ${e.message}"
+            textViewFileRSAStatus.setTextColor(resources.getColor(android.R.color.holo_red_dark, theme))
+        }
+    }
+    
+    private fun updateFileEncryptionPublicKey() {
+        try {
+            keyPair?.let { keyPair ->
+                val publicKeyString = Base64.getEncoder().encodeToString(keyPair.public.encoded)
+                val formattedKey = publicKeyString.chunked(64).joinToString("\n")
+                val displayKey = if (formattedKey.length > 100) {
+                    formattedKey.substring(0, 50) + "..." + formattedKey.substring(formattedKey.length - 50)
+                } else {
+                    formattedKey
+                }
+                
+                textViewFilePublicKey.text = displayKey
+                
+                val keySize = if (radioFileRSA4096Mode.isChecked) "RSA-4096" else "RSA-2048"
+                textViewFileRSAStatus.text = "✅ $keySize key pair ready"
+                textViewFileRSAStatus.setTextColor(resources.getColor(android.R.color.holo_green_dark, theme))
+                
+            } ?: run {
+                textViewFilePublicKey.text = "No key generated"
+                val keySize = if (radioFileRSA4096Mode.isChecked) "RSA-4096" else "RSA-2048"
+                textViewFileRSAStatus.text = "⚠ No $keySize key pair - create a key pair first"
+                textViewFileRSAStatus.setTextColor(resources.getColor(android.R.color.holo_orange_light, theme))
+            }
+        } catch (e: Exception) {
+            textViewFilePublicKey.text = "Key display failed"
+            textViewFileRSAStatus.text = "❌ Error loading key: ${e.message}"
+            textViewFileRSAStatus.setTextColor(resources.getColor(android.R.color.holo_red_dark, theme))
+        }
+    }
+
+    // File expiration support (MISSING FUNCTIONALITY ADDED)
+    private fun getFileExpirationTime(): Long {
+        return if (switchFileEnableExpiration.isChecked) {
+            val selectedExpiration = expirationOptions[spinnerFileExpirationTime.selectedItemPosition]
+            System.currentTimeMillis() + (selectedExpiration.second * 60 * 60 * 1000)
+        } else {
+            0L // No expiration
+        }
+    }
+
+    // Clipboard security method (MISSING METHOD ADDED)
+    private fun clearClipboardAfterDelay(delayMs: Long) {
+        try {
+            // Cancel any existing delayed clear operations
+            clearClipboardHandler.removeCallbacksAndMessages(null)
+            
+            // Schedule clipboard clearing after specified delay
+            clearClipboardHandler.postDelayed({
+                try {
+                    val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                    val emptyClip = ClipData.newPlainText("", "")
+                    clipboard.setPrimaryClip(emptyClip)
+                    
+                    val seconds = delayMs / 1000
+                    showToast("🧹 Clipboard cleared securely after ${seconds}s")
+                    addDebugMessage("🧹 Clipboard cleared automatically after ${seconds}s for security")
+                } catch (e: Exception) {
+                    addDebugMessage("⚠️ Clipboard clear failed: ${e.message}")
+                }
+            }, delayMs)
+            
+            val seconds = delayMs / 1000
+            addDebugMessage("⏰ Clipboard will be cleared in ${seconds}s for security")
+            
+        } catch (e: Exception) {
+            addDebugMessage("❌ Failed to schedule clipboard clearing: ${e.message}")
+        }
+    }
+
+    // File RSA Management methods (MISSING FUNCTIONALITY ADDED)
+    private fun generateFileEncryptionKeyPair() {
+        try {
+            addDebugMessage("🔄 Generating File RSA key pair...")
+            
+            val useRSA4096 = radioFileRSA4096Mode.isChecked
+            val newKeyPair = cryptoManager.generateRSAKeyPair(useRSA4096)
+            cryptoManager.saveKeyPair(newKeyPair, useRSA4096)
+            
+            keyPair = newKeyPair
+            updateFileEncryptionPublicKey()
+            
+            val sizeText = if (useRSA4096) "RSA-4096" else "RSA-2048"
+            showToast("✅ $sizeText key pair generated successfully!")
+            addDebugMessage("✅ File RSA key pair generated successfully!")
+            
+        } catch (e: Exception) {
+            addDebugMessage("❌ File RSA key pair generation failed: ${e.message}")
+            showToast("File key pair generation failed: ${e.message}")
+        }
+    }
+    
+    private fun copyFilePublicKeyToClipboard() {
+        try {
+            keyPair?.let { keyPair ->
+                val publicKeyString = Base64.getEncoder().encodeToString(keyPair.public.encoded)
+                val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                val clip = ClipData.newPlainText("Public Key", publicKeyString)
+                clipboard.setPrimaryClip(clip)
+                
+                val keySize = if (radioFileRSA4096Mode.isChecked) "RSA-4096" else "RSA-2048"
+                showToast("📋 $keySize public key copied to clipboard")
+                addDebugMessage("📋 File public key copied to clipboard")
+                
+                clearClipboardAfterDelay(600_000L) // 10 minutes for RSA keys
+                
+            } ?: run {
+                showToast("No key pair available - generate a key pair first")
+            }
+        } catch (e: Exception) {
+            showToast("Failed to copy public key: ${e.message}")
+            addDebugMessage("❌ Copy file public key failed: ${e.message}")
+        }
+    }
+    
+    private fun pasteFileRecipientPublicKey() {
+        try {
+            val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+            
+            if (clipboard.hasPrimaryClip() && 
+                clipboard.primaryClipDescription?.hasMimeType(ClipDescription.MIMETYPE_TEXT_PLAIN) == true) {
+                
+                val item = clipboard.primaryClip?.getItemAt(0)
+                val pasteData = item?.text?.toString()
+                
+                if (!pasteData.isNullOrEmpty()) {
+                    editTextFileRecipientPublicKey.setText(pasteData)
+                    showToast("📋 Public key pasted from clipboard")
+                    addDebugMessage("📋 File recipient public key pasted from clipboard")
+                } else {
+                    showToast("Clipboard is empty")
+                }
+            } else {
+                showToast("No text data in clipboard")
+            }
+        } catch (e: Exception) {
+            showToast("Failed to paste from clipboard: ${e.message}")
+            addDebugMessage("❌ Paste file recipient public key failed: ${e.message}")
+        }
+    }
+    
+    private fun clearFileRecipientPublicKey() {
+        try {
+            editTextFileRecipientPublicKey.setText("")
+            showToast("🗑️ Recipient's public key cleared")
+            addDebugMessage("🗑️ File recipient public key cleared")
+        } catch (e: Exception) {
+            showToast("Failed to clear recipient key: ${e.message}")
+            addDebugMessage("❌ Clear file recipient public key failed: ${e.message}")
+        }
+    }
+
+    private fun showInstructionsTab() {
+        viewEncryptTab.visibility = View.GONE
+        viewDecryptTab.visibility = View.GONE
+        viewFileEncryptionTab.visibility = View.GONE
+        viewInstructionsTab.visibility = View.VISIBLE
+        cardViewEncryptedMessage.visibility = View.GONE
+        
+        // Enable clickable links in instructions TextView
+        val textViewAppOverview = findViewById<TextView>(R.id.textViewAppOverview)
+        textViewAppOverview?.let { textView ->
+            val text = textView.text.toString()
+            val spannableString = SpannableString(text)
+            
+            val clickableSpan = object : ClickableSpan() {
+                override fun onClick(widget: View) {
+                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://dev-offcode.com"))
+                    startActivity(intent)
+                }
+                
+                override fun updateDrawState(ds: TextPaint) {
+                    super.updateDrawState(ds)
+                    ds.isUnderlineText = true
+                    ds.color = Color.parseColor("#4CAF50") // Vihreä väri
+                }
+            }
+            
+            val startIndex = text.indexOf("https://dev-offcode.com")
+            val endIndex = startIndex + "https://dev-offcode.com".length
+            
+            if (startIndex != -1) {
+                spannableString.setSpan(clickableSpan, startIndex, endIndex, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+                textView.text = spannableString
+                textView.movementMethod = LinkMovementMethod.getInstance()
+            }
+        }
+    }
+
+
+
 }

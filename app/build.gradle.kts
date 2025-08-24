@@ -5,15 +5,15 @@ plugins {
 }
 
 android {
-    namespace = "com.example.NETCrypt"
+    namespace = "com.example.OffCrypt1"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.example.NETCrypt"
-        minSdk = 35
+        applicationId = "com.example.OffCrypt1"
+        minSdk = 26
         targetSdk = 35
         versionCode = 1
-        versionName = "1.0"
+        versionName = "2.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -56,8 +56,16 @@ android {
         kotlinCompilerExtensionVersion = "1.5.3" // Replace with the correct version
     }
 
+    // Lint configuration to fix crashes
+    lint {
+        disable += "NullSafeMutableLiveData"
+        checkReleaseBuilds = false
+        abortOnError = false
+        warningsAsErrors = false
+    }
+
     // Lisää tämä mahdollisten manifest-konfliktien ratkaisemiseksi
-    packagingOptions {
+    packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
@@ -94,6 +102,18 @@ dependencies {
     // Gson (JSON-käsittelyyn, mutta voidaan käyttää ilmankin)
     implementation("com.google.code.gson:gson:2.13.1")
     implementation(libs.browser)
+
+    // TST Server compatibility dependencies
+    // Retrofit for HTTP networking
+    implementation("com.squareup.retrofit2:retrofit:2.9.0")
+    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
+    implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
+    
+    // Coroutines for async operations
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
+    
+    // Security and encryption dependencies
+    implementation("androidx.security:security-crypto:1.1.0-alpha06")
 
     // Testing
     testImplementation(libs.junit)

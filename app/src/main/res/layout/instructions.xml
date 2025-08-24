@@ -1,0 +1,226 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#1A1A1A"
+    android:padding="16dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <!-- App Overview Card -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="4dp"
+            app:cardBackgroundColor="#343444">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="20dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="📚 OffCrypt - Secure Communications"
+                    android:textSize="20sp"
+                    android:textStyle="bold"
+                    android:textColor="#ffffff"
+                    android:layout_marginBottom="16dp" />
+
+                <TextView
+                    android:id="@+id/textViewAppOverview"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="OffCrypt is a comprehensive encryption application that provides secure text and file encryption using industry-standard cryptographic algorithms. The app supports both password-based and RSA public-key encryption methods with military-grade AES-256 and RSA-4096 security.\n\nThis is a fully offline application - it does not connect to the internet or collect any user data. All encryption and decryption happens locally on your device. Perfect for journalists, business professionals, and privacy-conscious users who need secure communication without cloud dependencies.\n\nKey features include self-destructing messages, secure file deletion, cross-platform encrypted file sharing, and instant key generation without account registration. Built for Android in Kotlin with zero data collection policy.\n\nFor latest updates and changelog, visit: https://dev-offcode.com"
+                    android:textSize="14sp"
+                    android:textColor="#E8E8E8"
+                    android:lineSpacingExtra="4dp" />
+
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
+        <!-- How to Use Guide Card -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="4dp"
+            app:cardBackgroundColor="#343444">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="20dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="📖 How to Use OffCrypt"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:textColor="#ffffff"
+                    android:layout_marginBottom="16dp" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="**🔐 TEXT ENCRYPTION**\n\n**Method 1: Password Encryption (Recommended for beginners)**\n1. Go to 'Encrypt' tab\n2. Select '🔑 Password' encryption mode\n3. Write your message in the text field\n4. Choose 'Use random password' (recommended) or enter custom password\n5. Tap 'Encrypt message'\n6. Copy the encrypted message from the 'Encrypted message' box\n7. Copy the password (shown above the encrypted message)\n8. Send encrypted message and password through separate channels\n\n**Alternative: Save as encrypted file**\n5b. Instead of step 6-8: Tap '💾 Create encrypted file'\n6b. Share the .enc file and password separately\n7b. Recipient uses '📁 Import encrypted file for reading' to decrypt\n\n**Method 2: RSA Encryption (Advanced, no password sharing needed)**\n1. Go to 'Encrypt' tab\n2. Select '🔐 RSA-2048' or '🔒 RSA-4096' mode\n3. First time: Tap 'Generate new key pair'\n4. Share your public key with contacts\n5. Get their public key and paste it in the recipient field\n6. Write your message and tap 'Encrypt message'\n7. Copy and send the encrypted message from the 'Encrypted message' box\n\n**Alternative: Save as encrypted file**\n7b. Instead of step 7: Tap '💾 Create encrypted file'\n8b. Share the .enc file (no password needed!)\n9b. Recipient uses '📁 Import encrypted file for reading' to decrypt\n\n**🔓 DECRYPTING MESSAGES (What the recipient does)**\n\n**From text message:**\n1. Go to 'Decrypt' tab\n2. Paste the encrypted message you received into the 'Encrypted message' text field\n3. For password encryption: Enter the password in the password field\n4. For RSA encryption: No password needed (uses your private key automatically)\n5. Tap 'Decrypt message'\n6. Read the decrypted message in the 'Decrypted message' box\n\n**From encrypted file:**\n1. Go to 'Encrypt' tab\n2. Tap '📁 Import encrypted file for reading'\n3. Select the .enc file you received\n4. For password encryption: Enter the password when prompted\n5. For RSA encryption: No password needed\n6. Message appears in the text field\n\n**📁 FILE ENCRYPTION**\n\n**Password Method:**\n1. Go to 'File Encryption' tab\n2. Choose '🔐 Password' mode\n3. Configure security options (disappear file, secure delete, etc.)\n4. Tap 'Select File' and choose your file\n5. Tap 'Encrypt File'\n6. Share the encrypted .enc file and password separately\n\n**RSA Method:**\n1. Go to 'File Encryption' tab\n2. Choose '🔑 RSA-2048' or '🔒 RSA-4096' mode\n3. Generate key pair if needed\n4. Get recipient's public key\n5. Select and encrypt your file\n6. Send the encrypted .enc file (no password needed!)\n\n**🔓 FILE DECRYPTION**\n1. Go to 'File Encryption' tab\n2. Scroll to 'File Decryption' section\n3. Tap 'Select .enc File'\n4. Choose the encrypted file you received\n5. Tap 'Decrypt File'\n6. File will be saved to your device\n\n**⚙️ SECURITY FEATURES**\n\n**Disappearing Messages:**\n• Enable to automatically delete messages after set time\n• Choose from 1 minute to 24 hours\n• 'Burn after reading' deletes when you hide the app\n\n**File Security Options:**\n• 'Secure delete original' - Safely removes source file\n• 'Verify encryption' - Checks file integrity\n• 'Strip metadata' - Removes EXIF data from images\n\n**Key Management Tips:**\n• Back up your RSA keys safely\n• Verify public keys through trusted channels\n• Use strong passwords (12+ characters)\n\n**💡 Remember:**\n• Encrypted message = text you copy/paste OR .enc file you share\n• Password = needed for password encryption only\n• Files are often easier to share than long text strings"
+                    android:textSize="14sp"
+                    android:textColor="#E8E8E8"
+                    android:lineSpacingExtra="4dp" />
+
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
+        <!-- Encryption Methods Card -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="4dp"
+            app:cardBackgroundColor="#343444">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="20dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="🔐 Encryption Methods"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:textColor="#ffffff"
+                    android:layout_marginBottom="16dp" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="**Password-Based Encryption (AES-256-GCM):**\n• Uses your password to encrypt messages\n• Same password needed for decryption\n• Best for personal use or shared secrets\n• Uses PBKDF2 key derivation with 100,000 iterations\n\n**RSA Public Key Encryption - Simple Explanation:**\n🔐 Think of it like a mailbox system:\n• Everyone has a mailbox (public key) that anyone can use to send messages\n• Only you have the key (private key) to open your mailbox\n• You can share your mailbox location with everyone safely\n• But never give away your mailbox key!\n\n🔑 **How it works:**\n1. Generate your key pair (mailbox + key)\n2. Share your public key (mailbox location) with friends\n3. They encrypt messages using your public key\n4. Only you can decrypt with your private key\n\n💡 **Why it's secure:**\n• Even if everyone knows your public key, they can't read messages sent to you\n• No need to share passwords beforehand\n• Mathematical impossibility to guess private key from public key"
+                    android:textSize="14sp"
+                    android:textColor="#E8E8E8"
+                    android:lineSpacingExtra="4dp" />
+
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
+        <!-- Security Features Card -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="4dp"
+            app:cardBackgroundColor="#343444">
+
+            <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="20dp">
+
+                <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="🛡️ Security Features"
+                        android:textSize="18sp"
+                        android:textStyle="bold"
+                        android:textColor="#ffffff"
+                        android:layout_marginBottom="16dp" />
+
+                <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="**Cryptographic Security:**\n✅ AES-256-GCM authenticated encryption with 12-byte IV\n✅ RSA-2048/4096 with OAEP-SHA256-MGF1 padding\n✅ PBKDF2-SHA256 key derivation (100,000 iterations)\n✅ Hardware-backed secure random number generation\n✅ HMAC-SHA256 for message integrity (32-byte MAC)\n✅ RSA-PSS digital signatures with SHA-512\n✅ Constant-time MAC verification (timing attack protection)\n\n**Key Management:**\n✅ Android Hardware Security Module (HSM) integration\n✅ Private keys encrypted with AES-256-GCM before storage\n✅ PKCS#8 format for private keys, X.509 for public keys\n✅ 32-byte cryptographic salts for key derivation\n✅ Secure memory wiping (7 iterations)\n✅ Version-controlled encryption formats\n\n**Data Protection:**\n✅ No plaintext sensitive data stored on device\n✅ Encrypted preferences using Android Keystore\n✅ Automatic clipboard clearing (15-45 second timeouts)\n✅ Sensitive string tracking and secure cleanup\n✅ Secure exception handling without information leakage\n✅ Optional message expiration timestamps\n\n**File Security:**\n✅ Hybrid encryption (AES for content, RSA for keys)\n✅ Encrypted file metadata with JSON format\n✅ Support for all file types with metadata preservation\n✅ Optional secure file deletion\n✅ File integrity verification\n\n**Network Security:**\n✅ RESTful API for secure key exchange\n✅ 30-second connection timeouts\n✅ Public key fingerprint verification\n✅ No private keys transmitted over network\n✅ Structured JSON data exchange format"
+                        android:textSize="14sp"
+                        android:textColor="#E8E8E8"
+                        android:lineSpacingExtra="4dp" />
+
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
+        <!-- Technical Specifications Card -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="4dp"
+            app:cardBackgroundColor="#343444">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="20dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="⚙️ Technical Specifications"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:textColor="#ffffff"
+                    android:layout_marginBottom="16dp" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="**Encryption Parameters:**\n• AES Key Length: 256 bits\n• GCM IV Length: 12 bytes (96 bits)\n• GCM Tag Length: 16 bytes (128 bits)\n• Salt Length: 32 bytes (256 bits)\n• PBKDF2 Iterations: 100,000\n• HMAC Length: 32 bytes (256 bits)\n• RSA Key Sizes: 2048/4096 bits\n\n**Security Constants:**\n• Memory Wipe Iterations: 7\n• Clipboard Clear Delay: 15-45 seconds\n• Network Timeout: 30 seconds\n\n**Format Versions:**\n• 0x01: Password-based encryption\n• 0x02: RSA-2048 encryption\n• 0x0A: RSA-4096 encryption\n• 0x0B: File encryption format\n\n**Supported Algorithms:**\n• AES/GCM/NoPadding\n• RSA/ECB/OAEPWithSHA-256AndMGF1Padding\n• PBKDF2WithHmacSHA256\n• HmacSHA256\n• SHA512withRSA/PSS"
+                    android:textSize="14sp"
+                    android:textColor="#E8E8E8"
+                    android:lineSpacingExtra="4dp" />
+
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
+        <!-- Troubleshooting Card -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="4dp"
+            app:cardBackgroundColor="#343444">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="20dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="🔧 Troubleshooting"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:textColor="#ffffff"
+                    android:layout_marginBottom="16dp" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="**Common Issues:**\n\n**Can't decrypt message:**\n• Verify you're using the correct password\n• Check that the encrypted text is complete\n• Ensure the message wasn't corrupted during transfer\n\n**RSA key problems:**\n• Make sure you have the correct private key\n• Verify the public key used for encryption\n• Check that key format is valid\n\n**File encryption issues:**\n• Ensure sufficient storage space\n• Check file permissions\n• Try smaller files if memory issues occur"
+                    android:textSize="14sp"
+                    android:textColor="#E8E8E8"
+                    android:lineSpacingExtra="4dp" />
+
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
+    </LinearLayout>
+</ScrollView>

@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:background="#000000"
+    android:padding="32dp">
+
+
+    <!-- Otsikko -->
+    <TextView
+        android:id="@+id/lockTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Sovellus lukittu"
+        android:textColor="#ffffff"
+        android:textSize="24sp"
+        android:textStyle="bold"
+        android:gravity="center"
+        android:layout_marginBottom="32dp" />
+
+    <!-- Kortti salasanalle -->
+    <androidx.cardview.widget.CardView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="16dp"
+        app:cardCornerRadius="12dp"
+        app:cardElevation="8dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="24dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginBottom="16dp"
+                android:gravity="center"
+                android:text="Syötä salasana avataksesi sovellus"
+                android:textColor="#000000"
+                android:textSize="16sp" />
+
+            <!-- Salasanakenttä -->
+            <EditText
+                android:id="@+id/lockPassword"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Salasana"
+                android:inputType="textPassword"
+                android:padding="16dp"
+                android:background="@android:drawable/edit_text"
+                android:textSize="16sp"
+                android:layout_marginBottom="20dp" />
+
+            <!-- Napit -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center">
+
+                <Button
+                    android:id="@+id/cancelButton"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginEnd="8dp"
+                    android:text="Peruuta"
+                    android:backgroundTint="#e74c3c"
+                    android:textColor="#ffffff"
+                    android:textStyle="bold" />
+
+                <Button
+                    android:id="@+id/unlockButton"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="8dp"
+                    android:text="Avaa"
+                    android:backgroundTint="#27ae60"
+                    android:textColor="#ffffff"
+                    android:textStyle="bold" />
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+    </androidx.cardview.widget.CardView>
+
+    <!-- Turvallisuusinfo -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="🛡️"
+        android:textColor="#bdc3c7"
+        android:textSize="14sp"
+        android:layout_marginTop="32dp" />
+
+</LinearLayout>

@@ -1,4 +1,4 @@
-🔐 OFFCRYPT is a secure offline-capable encryption and messaging app.
+🔐 NETCRYPT is a secure offline-capable encryption and messaging app.
 
 KEY SECURITY FEATURES:
 ✅ RSA-2048/4096 asymmetric encryption

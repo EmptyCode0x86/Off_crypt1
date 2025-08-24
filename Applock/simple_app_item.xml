@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:padding="8dp"
+    android:background="#2A2A2A"
+    android:layout_marginBottom="8dp">
+
+    <ImageView
+        android:id="@+id/imageViewAppIcon"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:src="@mipmap/ic_launcher"
+        android:layout_marginEnd="12dp" />
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/textViewAppName"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="#ffffff" />
+
+        <TextView
+            android:id="@+id/textViewPackageName"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="12sp"
+            android:textColor="#ffffff" />
+    </LinearLayout>
+
+    <Switch
+        android:id="@+id/switchAppLock"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:minWidth="48dp"
+        android:minHeight="48dp"
+        android:padding="8dp"
+        android:thumbTint="@color/switch_thumb_color"
+        android:trackTint="@color/switch_track_color" />
+</LinearLayout>

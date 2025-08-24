@@ -19,5 +19,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "ProcessKiller"
+rootProject.name = "OffCrypt"
 include(":app")

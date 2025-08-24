@@ -18,11 +18,17 @@
     <color name="colorPrimaryDark">#2980b9</color>
     <color name="colorAccent">#e74c3c</color>
 
-    <!-- Switch värit -->
+    <!-- Control värit (standardoitu: Vihreä = ON, Punainen = OFF) -->
+    <color name="control_on_primary">#27ae60</color>     <!-- Vihreä - pääväri kun päällä -->
+    <color name="control_on_secondary">#2ecc71</color>   <!-- Vaalempi vihreä - toissijainen -->
+    <color name="control_off_primary">#e74c3c</color>    <!-- Punainen - pääväri kun pois päältä -->
+    <color name="control_off_secondary">#c0392b</color>  <!-- Tumempi punainen - toissijainen -->
+    
+    <!-- Vanhat switch värit (deprecated, käytä control_ värejä) -->
     <color name="switch_thumb_color_enabled">#27ae60</color>
-    <color name="switch_thumb_color_disabled">#bdc3c7</color>
+    <color name="switch_thumb_color_disabled">#e74c3c</color>
     <color name="switch_track_color_enabled">#2ecc71</color>
-    <color name="switch_track_color_disabled">#ecf0f1</color>
+    <color name="switch_track_color_disabled">#c0392b</color>
 
     <!-- Taustavärit -->
     <color name="background_dark">#2c3e50</color>

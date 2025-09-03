@@ -6,12 +6,12 @@ plugins {
 
 android {
     namespace = "com.example.OffCrypt1"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.example.OffCrypt1"
         minSdk = 26
-        targetSdk = 35
+        targetSdk = 36
         versionCode = 1
         versionName = "2.0"
 
@@ -93,6 +93,8 @@ dependencies {
     // Material Design (Traditional Views)
     implementation("com.google.android.material:material:1.12.0")
 
+    implementation("androidx.appcompat:appcompat:1.7.1")
+
     // RecyclerView (tarvitaan sovelluslistalle)
     implementation("androidx.recyclerview:recyclerview:1.4.0")
 
@@ -104,19 +106,26 @@ dependencies {
     implementation(libs.browser)
 
     // TST Server compatibility dependencies
-    // Retrofit for HTTP networking
+    // Retrofit for HTTP networking - downgraded for Kotlin 2.0.21 compatibility
     implementation("com.squareup.retrofit2:retrofit:2.9.0")
     implementation("com.squareup.retrofit2:converter-gson:2.9.0")
     implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
     
     // Coroutines for async operations
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
     
     // Security and encryption dependencies
-    implementation("androidx.security:security-crypto:1.1.0-alpha06")
+    // KORJATTU: androidx.security deprecated 2024-2025, käytä natiivi AndroidKeyStore
+    // implementation("androidx.security:security-crypto:1.1.0-alpha06")
+    
+    // Biometric authentication for AndroidKeyStore integration
+    implementation("androidx.biometric:biometric:1.4.0-alpha04")
 
     // Testing
     testImplementation(libs.junit)
+    testImplementation("org.mockito:mockito-core:5.19.0")
+    testImplementation("org.mockito:mockito-inline:5.2.0") 
+    testImplementation("org.mockito.kotlin:mockito-kotlin:6.0.0")
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))

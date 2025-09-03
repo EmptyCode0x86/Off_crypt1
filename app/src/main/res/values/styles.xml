@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Tab Text Style -->
+    <style name="TabTextStyle" parent="TextAppearance.Design.Tab">
+        <item name="android:textSize">14sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+    </style>
+
+    <!-- App Theme -->
+    <style name="AppTheme" parent="Theme.Material3.Dark.NoActionBar">
+        <item name="colorPrimary">#27ae60</item>
+        <item name="colorPrimaryVariant">#1e8449</item>
+        <item name="colorOnPrimary">#FFFFFF</item>
+        <item name="colorSecondary">#3498db</item>
+        <item name="colorSecondaryVariant">#2980b9</item>
+        <item name="colorOnSecondary">#FFFFFF</item>
+        <item name="android:colorBackground">#2A2A2A</item>
+        <item name="colorSurface">#343444</item>
+        <item name="colorOnSurface">#FFFFFF</item>
+        <item name="colorError">#e74c3c</item>
+        <item name="colorOnError">#FFFFFF</item>
+    </style>
+
+    <!-- Dark theme variant -->
+    <style name="AppTheme.Dark" parent="Theme.Material3.Dark">
+        <item name="colorPrimary">#27ae60</item>
+        <item name="colorPrimaryVariant">#1e8449</item>
+        <item name="colorOnPrimary">#FFFFFF</item>
+        <item name="colorSecondary">#3498db</item>
+        <item name="colorSecondaryVariant">#2980b9</item>
+        <item name="colorOnSecondary">#FFFFFF</item>
+        <item name="android:colorBackground">#2A2A2A</item>
+        <item name="colorSurface">#343444</item>
+        <item name="colorOnSurface">#FFFFFF</item>
+    </style>
+
+    <!-- Button styles -->
+    <style name="PrimaryButton" parent="Widget.Material3.Button">
+        <item name="android:backgroundTint">#27ae60</item>
+        <item name="android:textColor">#FFFFFF</item>
+        <item name="android:textStyle">bold</item>
+        <item name="cornerRadius">12dp</item>
+        <item name="android:elevation">3dp</item>
+    </style>
+
+    <style name="SecondaryButton" parent="Widget.Material3.Button.OutlinedButton">
+        <item name="android:backgroundTint">#3498db</item>
+        <item name="android:textColor">#FFFFFF</item>
+        <item name="android:textStyle">bold</item>
+        <item name="cornerRadius">10dp</item>
+        <item name="android:elevation">2dp</item>
+    </style>
+
+    <style name="DangerButton" parent="Widget.Material3.Button">
+        <item name="android:backgroundTint">#e74c3c</item>
+        <item name="android:textColor">#FFFFFF</item>
+        <item name="android:textStyle">bold</item>
+        <item name="cornerRadius">10dp</item>
+        <item name="android:elevation">2dp</item>
+    </style>
+</resources>

@@ -2,9 +2,7 @@ package com.example.OffCrypt1
 
 import java.security.Key
 import java.security.KeyPair
-import java.security.MessageDigest
 import java.security.PrivateKey
-import java.security.PublicKey
 import java.security.spec.MGF1ParameterSpec
 import java.text.SimpleDateFormat
 import java.util.Base64
@@ -18,30 +16,44 @@ import javax.crypto.spec.SecretKeySpec
 
 /**
  * MessageCryptoService - Clean business logic for message encryption/decryption
- * 
+ *
  * Extracted from SecureMessage.kt to separate cryptographic operations from UI logic.
  * This service provides a clean interface for encryption/decryption without UI dependencies.
  */
 class MessageCryptoService(
     private val cryptoManager: CryptoManager
 ) {
-    
+
     companion object {
-        // Version bytes for different encryption methods
-        private const val VERSION_BYTE_PASSWORD: Byte = 0x01
-        private const val VERSION_BYTE_RSA: Byte = 0x02
-        private const val VERSION_BYTE_RSA_EXPIRING: Byte = 0x03
-        private const val VERSION_BYTE_RSA_SIGNED: Byte = 0x04
-        private const val VERSION_BYTE_RSA_PFS: Byte = 0x05
-        private const val VERSION_BYTE_RSA_SIGNED_PFS: Byte = 0x06
-        private const val VERSION_BYTE_RSA_ALL: Byte = 0x07
-        private const val VERSION_BYTE_RSA_4096_AES_FULL: Byte = 0x0A
-        
+        // Import centralized constants
+        private const val VERSION_BYTE_PASSWORD = CryptoConstants.VERSION_BYTE_PASSWORD
+        private const val VERSION_BYTE_RSA = CryptoConstants.VERSION_BYTE_RSA
+        private const val VERSION_BYTE_RSA_EXPIRING = CryptoConstants.VERSION_BYTE_RSA_EXPIRING
+        private const val VERSION_BYTE_RSA_SIGNED = CryptoConstants.VERSION_BYTE_RSA_SIGNED
+        private const val VERSION_BYTE_RSA_PFS = CryptoConstants.VERSION_BYTE_RSA_PFS
+        private const val VERSION_BYTE_RSA_SIGNED_PFS = CryptoConstants.VERSION_BYTE_RSA_SIGNED_PFS
+        private const val VERSION_BYTE_RSA_ALL = CryptoConstants.VERSION_BYTE_RSA_ALL
+        private const val VERSION_BYTE_RSA_4096_AES_FULL =
+            CryptoConstants.VERSION_BYTE_RSA_4096_AES_FULL
+
+        private const val VERSION_BYTE_MULTI_SALT = CryptoConstants.VERSION_BYTE_MULTI_SALT
+
+        private const val VERSION_BYTE_BURN_AFTER_READING =
+            CryptoConstants.VERSION_BYTE_BURN_AFTER_READING
+
+        private const val VERSION_BYTE_FILE_ENCRYPTED = CryptoConstants.VERSION_BYTE_FILE_ENCRYPTED
+
+        private const val VERSION_BYTE_FILE_MULTI_SALT =
+            CryptoConstants.VERSION_BYTE_FILE_MULTI_SALT
+
+        private const val VERSION_BYTE_RSA_ADVANCED = CryptoConstants.VERSION_BYTE_RSA_ADVANCED
+
+
         // Cryptographic constants
-        private const val IV_SIZE = 12
-        private const val GCM_TAG_LENGTH = 16
+        private const val IV_SIZE = CryptoConstants.IV_SIZE
+        private const val GCM_TAG_LENGTH = CryptoConstants.GCM_TAG_LENGTH
     }
-    
+
     /**
      * Encrypt message with password-based encryption
      * @param message The message to encrypt
@@ -54,10 +66,10 @@ class MessageCryptoService(
         if (password.isEmpty()) {
             throw RuntimeException("Enter password or use generated password!")
         }
-        
+
         return cryptoManager.encryptWithPassword(message, password, expirationTime)
     }
-    
+
     /**
      * Encrypt message with RSA public key encryption
      * @param message The message to encrypt
@@ -66,28 +78,32 @@ class MessageCryptoService(
      * @return Base64 encoded encrypted message
      * @throws RuntimeException if public key is invalid or encryption fails
      */
-    fun encryptWithRSA(message: String, recipientPublicKey: String, options: RSAEncryptionOptions): String {
+    fun encryptWithRSA(
+        message: String,
+        recipientPublicKey: String,
+        options: RSAEncryptionOptions
+    ): String {
         if (recipientPublicKey.trim().isEmpty()) {
             throw RuntimeException("Enter recipient's public key!")
         }
 
         return try {
             val publicKey = cryptoManager.parsePublicKeyFromString(recipientPublicKey.trim())
-            
+
             cryptoManager.encryptWithRSA(
-                message, 
-                publicKey, 
-                options.useRSA4096, 
-                options.enablePFS, 
-                options.enableSignatures, 
-                options.enableExpiration, 
+                message,
+                publicKey,
+                options.useRSA4096,
+                options.enablePFS,          // jätetty parametri ennalleen, ei vaikutusta tässä tiedostossa
+                options.enableSignatures,
+                options.enableExpiration,
                 options.expirationTime
             )
         } catch (e: Exception) {
             throw RuntimeException("Invalid public key: ${e.message}")
         }
     }
-    
+
     /**
      * Decrypt an encrypted message based on version byte detection
      * @param encryptedMessage Base64 encoded encrypted message
@@ -96,7 +112,11 @@ class MessageCryptoService(
      * @return DecryptionResult containing decrypted message and metadata
      * @throws RuntimeException if decryption fails or required parameters missing
      */
-    fun decryptMessage(encryptedMessage: String, password: String?, keyPair: KeyPair?): DecryptionResult {
+    fun decryptMessage(
+        encryptedMessage: String,
+        password: String?,
+        keyPair: KeyPair?
+    ): DecryptionResult {
         if (encryptedMessage.trim().isEmpty()) {
             throw RuntimeException("Enter encrypted message!")
         }
@@ -105,12 +125,20 @@ class MessageCryptoService(
         val version = encryptedData[0]
 
         val decryptedMessage = when (version) {
-            VERSION_BYTE_PASSWORD -> {
+            VERSION_BYTE_MULTI_SALT -> {
                 if (password?.trim()?.isEmpty() != false) {
                     throw RuntimeException("Enter password!")
                 }
                 cryptoManager.decryptWithPassword(encryptedMessage, password)
             }
+
+            VERSION_BYTE_BURN_AFTER_READING -> {
+                if (password?.trim()?.isEmpty() != false) {
+                    throw RuntimeException("Enter password!")
+                }
+                cryptoManager.decryptWithPassword(encryptedMessage, password)
+            }
+
             VERSION_BYTE_RSA, VERSION_BYTE_RSA_EXPIRING -> {
                 if (keyPair?.private == null) {
                     throw RuntimeException("Private key missing for decryption!")
@@ -121,24 +149,43 @@ class MessageCryptoService(
                     // Fallback to legacy decryption methods for backward compatibility
                     when (version) {
                         VERSION_BYTE_RSA -> decryptRSABased(encryptedMessage, keyPair.private)
-                        VERSION_BYTE_RSA_EXPIRING -> decryptRSABasedWithExpiration(encryptedMessage, keyPair.private)
+                        VERSION_BYTE_RSA_EXPIRING -> decryptRSABasedWithExpiration(
+                            encryptedMessage,
+                            keyPair.private
+                        )
+
                         else -> throw e
                     }
                 }
             }
-            VERSION_BYTE_RSA_SIGNED, VERSION_BYTE_RSA_PFS, 
+
+            VERSION_BYTE_RSA_SIGNED, VERSION_BYTE_RSA_PFS,
             VERSION_BYTE_RSA_SIGNED_PFS, VERSION_BYTE_RSA_ALL -> {
                 if (keyPair?.private == null) {
                     throw RuntimeException("Private key missing for RSA decryption!")
                 }
                 decryptRSAWithFeatures(encryptedMessage, keyPair.private, version)
             }
+
             VERSION_BYTE_RSA_4096_AES_FULL -> {
                 if (keyPair?.private == null) {
                     throw RuntimeException("Private key missing for RSA-4096 decryption!")
                 }
                 decryptRSA4096WithAESFull(encryptedMessage, keyPair.private)
             }
+
+            VERSION_BYTE_FILE_ENCRYPTED -> {
+                throw RuntimeException("File encryption not supported in message decryption. Use file decryption methods instead.")
+            }
+
+            VERSION_BYTE_FILE_MULTI_SALT -> {
+                throw RuntimeException("File multi-salt encryption not supported in message decryption. Use file decryption methods instead.")
+            }
+
+            VERSION_BYTE_RSA_ADVANCED -> {
+                throw RuntimeException("RSA advanced encryption not supported in message decryption. This version is reserved for future use.")
+            }
+
             else -> {
                 throw RuntimeException("Unknown encryption version: $version")
             }
@@ -153,7 +200,7 @@ class MessageCryptoService(
             )
         )
     }
-    
+
     /**
      * Legacy RSA decryption method for backward compatibility
      * @param encryptedText Base64 encoded encrypted text
@@ -193,14 +240,17 @@ class MessageCryptoService(
             throw RuntimeException("RSA decryption failed", e)
         }
     }
-    
+
     /**
-     * Legacy RSA decryption with expiration for backward compatibility  
+     * Legacy RSA decryption with expiration for backward compatibility
      * @param encryptedText Base64 encoded encrypted text
      * @param privateKey RSA private key
      * @return Decrypted message
      */
-    private fun decryptRSABasedWithExpiration(encryptedText: String, privateKey: PrivateKey): String {
+    private fun decryptRSABasedWithExpiration(
+        encryptedText: String,
+        privateKey: PrivateKey
+    ): String {
         try {
             val encryptedData = Base64.getDecoder().decode(encryptedText)
             var offset = 1
@@ -233,7 +283,10 @@ class MessageCryptoService(
             if (metadata != null) {
                 val expirationTime = metadata["exp"] as? Long
                 if (expirationTime != null && System.currentTimeMillis() > expirationTime) {
-                    val expiredDate = SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.getDefault()).format(Date(expirationTime))
+                    val expiredDate =
+                        SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.getDefault()).format(
+                            Date(expirationTime)
+                        )
                     throw RuntimeException("Message has expired ($expiredDate)")
                 }
 
@@ -246,15 +299,20 @@ class MessageCryptoService(
             throw RuntimeException("RSA decryption with expiring message failed: ${e.message}")
         }
     }
-    
+
     /**
-     * RSA decryption with advanced features (PFS, signatures, etc.)
+     * RSA decryption with advanced features (signatures, etc.). PFS poistettu:
+     * mahdolliset ephemeraaliavaimet ohitetaan eikä niistä johdeta avainta.
      * @param encryptedText Base64 encoded encrypted text
      * @param privateKey RSA private key
      * @param version Version byte indicating features used
      * @return Decrypted message
      */
-    private fun decryptRSAWithFeatures(encryptedText: String, privateKey: PrivateKey, version: Byte): String {
+    private fun decryptRSAWithFeatures(
+        encryptedText: String,
+        privateKey: PrivateKey,
+        version: Byte
+    ): String {
         try {
             val encryptedData = Base64.getDecoder().decode(encryptedText)
             var offset = 1
@@ -310,12 +368,12 @@ class MessageCryptoService(
                     ((encryptedData[offset + 1].toInt() and 0xFF) shl 8)
             offset += 2
 
-            var ephemeralKeyBytes: ByteArray? = null
+            // Luetaan ja ohitetaan mahdollinen ephemeraaliavainmateriaali (PFS poistettu)
             if (ephemeralKeySize > 0) {
                 if (offset + ephemeralKeySize > encryptedData.size) {
                     throw RuntimeException("Corrupted data: ephemeral key missing")
                 }
-                ephemeralKeyBytes = encryptedData.copyOfRange(offset, offset + ephemeralKeySize)
+                // skip bytes
                 offset += ephemeralKeySize
             }
 
@@ -331,20 +389,8 @@ class MessageCryptoService(
                 val originalAESKeyBytes = rsaCipher.doFinal(encryptedAESKey)
                 val originalAESKey = SecretKeySpec(originalAESKeyBytes, "AES")
 
-                var finalAESKey = originalAESKey
-                if (ephemeralKeyBytes != null && ephemeralKeyBytes.isNotEmpty()) {
-                    try {
-                        val ephemeralKeyMaterial = ephemeralKeyBytes.take(32).toByteArray()
-                        val combinedKeyMaterial = originalAESKey.encoded + ephemeralKeyMaterial
-                        val digest = MessageDigest.getInstance("SHA-256")
-                        val derivedKey = digest.digest(combinedKeyMaterial)
-                        finalAESKey = SecretKeySpec(derivedKey, "AES")
-                        // Note: Perfect Forward Secrecy enabled (no UI notification in service)
-                    } catch (e: Exception) {
-                        // ECDH failed, using basic AES key (no UI notification in service)
-                        finalAESKey = originalAESKey
-                    }
-                }
+                // PFS poistettu: käytetään aina alkuperäistä AES-avainta
+                val finalAESKey = originalAESKey
 
                 val aesCipher = Cipher.getInstance("AES/GCM/NoPadding")
                 val gcmSpec = GCMParameterSpec(GCM_TAG_LENGTH * 8, iv)
@@ -357,7 +403,10 @@ class MessageCryptoService(
                 val finalMessage = if (metadata != null) {
                     val expirationTime = metadata["exp"] as? Long
                     if (expirationTime != null && System.currentTimeMillis() > expirationTime) {
-                        val expiredDate = SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.getDefault()).format(Date(expirationTime))
+                        val expiredDate =
+                            SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.getDefault()).format(
+                                Date(expirationTime)
+                            )
                         throw RuntimeException("Message has expired ($expiredDate)")
                     }
 
@@ -378,9 +427,10 @@ class MessageCryptoService(
             throw RuntimeException("RSA decryption with features failed: ${e.message}")
         }
     }
-    
+
     /**
-     * RSA-4096 with AES full decryption
+     * RSA-4096 with AES full decryption. PFS poistettu:
+     * mahdolliset ephemeraaliavaimet luetaan ja ohitetaan.
      * @param encryptedText Base64 encoded encrypted text
      * @param privateKey RSA private key
      * @return Decrypted message
@@ -400,9 +450,8 @@ class MessageCryptoService(
 
             val ephemeralKeySize = readInt32(encryptedData, offset)
             offset += 4
-            var ephemeralKeyBytes: ByteArray? = null
             if (ephemeralKeySize > 0) {
-                ephemeralKeyBytes = encryptedData.sliceArray(offset until offset + ephemeralKeySize)
+                // ohitetaan ephemeraaliavain (PFS poistettu)
                 offset += ephemeralKeySize
             }
 
@@ -419,19 +468,8 @@ class MessageCryptoService(
             val rsaCipher = getRSAOAEPCipher(Cipher.DECRYPT_MODE, privateKey)
             val masterAESKey = rsaCipher.doFinal(encryptedMasterKey)
 
-            var finalAESKey = masterAESKey
-            if (ephemeralKeyBytes != null && ephemeralKeyBytes.isNotEmpty()) {
-                try {
-                    val combinedInput = masterAESKey + ephemeralKeyBytes.take(32).toByteArray()
-                    val digest = MessageDigest.getInstance("SHA-512")
-                    val derivedKeyMaterial = digest.digest(combinedInput)
-                    finalAESKey = derivedKeyMaterial.sliceArray(0..31)
-                    // Note: Perfect Forward Secrecy activated (no UI notification in service)
-                } catch (e: Exception) {
-                    // PFS failed, using master key (no UI notification in service)
-                    finalAESKey = masterAESKey
-                }
-            }
+            // PFS poistettu: käytetään aina master-avainta sellaisenaan
+            val finalAESKey = masterAESKey
 
             val aesCipher = Cipher.getInstance("AES/GCM/NoPadding")
             val finalAESKeySpec = SecretKeySpec(finalAESKey, "AES")
@@ -446,7 +484,10 @@ class MessageCryptoService(
             val finalMessage = if (metadata != null) {
                 val expirationTime = metadata["exp"] as? Long
                 if (expirationTime != null && System.currentTimeMillis() > expirationTime) {
-                    val expiredDate = SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.getDefault()).format(Date(expirationTime))
+                    val expiredDate =
+                        SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.getDefault()).format(
+                            Date(expirationTime)
+                        )
                     throw RuntimeException("Message has expired ($expiredDate)")
                 }
 
@@ -461,31 +502,39 @@ class MessageCryptoService(
             return finalMessage
 
         } catch (e: Exception) {
-            throw RuntimeException("RSA-4096 + AES-256-GCM (full) decryption failed: ${e.message}", e)
+            throw RuntimeException(
+                "RSA-4096 + AES-256-GCM (full) decryption failed: ${e.message}",
+                e
+            )
         }
     }
-    
+
     /**
      * Get encryption method enum from version byte
      */
     private fun getEncryptionMethod(version: Byte): EncryptionMethod {
         return when (version) {
             VERSION_BYTE_PASSWORD -> EncryptionMethod.PASSWORD
+            VERSION_BYTE_MULTI_SALT -> EncryptionMethod.PASSWORD
+            VERSION_BYTE_BURN_AFTER_READING -> EncryptionMethod.PASSWORD
             VERSION_BYTE_RSA, VERSION_BYTE_RSA_EXPIRING -> EncryptionMethod.RSA_2048
             VERSION_BYTE_RSA_4096_AES_FULL -> EncryptionMethod.RSA_4096
+            VERSION_BYTE_FILE_ENCRYPTED, VERSION_BYTE_FILE_MULTI_SALT -> EncryptionMethod.RSA_ADVANCED
+            VERSION_BYTE_RSA_ADVANCED -> EncryptionMethod.RSA_ADVANCED
             else -> EncryptionMethod.RSA_ADVANCED
         }
     }
-    
+
     /**
      * Check if version supports expiration
      */
     private fun isExpiringVersion(version: Byte): Boolean {
-        return version == VERSION_BYTE_RSA_EXPIRING || 
-               version == VERSION_BYTE_RSA_ALL ||
-               version == VERSION_BYTE_RSA_4096_AES_FULL
+        return version == VERSION_BYTE_RSA_EXPIRING ||
+                version == VERSION_BYTE_RSA_ALL ||
+                version == VERSION_BYTE_RSA_4096_AES_FULL ||
+                version == VERSION_BYTE_BURN_AFTER_READING
     }
-    
+
     /**
      * Parse metadata from message string
      * @param messageWithMetadata Message string that may contain metadata
@@ -497,7 +546,8 @@ class MessageCryptoService(
                 return mapOf("msg" to messageWithMetadata)
             }
 
-            val metadataString = messageWithMetadata.substring(5, messageWithMetadata.indexOf(":ENDMETA"))
+            val metadataString =
+                messageWithMetadata.substring(5, messageWithMetadata.indexOf(":ENDMETA"))
             val metadata = mutableMapOf<String, Any>()
 
             metadataString.split("|").forEach { pair ->
@@ -516,7 +566,7 @@ class MessageCryptoService(
             null
         }
     }
-    
+
     /**
      * Helper method to read 32-bit integer from byte array
      */
@@ -529,28 +579,22 @@ class MessageCryptoService(
                 ((data[offset + 2].toInt() and 0xFF) shl 16) or
                 ((data[offset + 3].toInt() and 0xFF) shl 24)
     }
-    
+
     /**
      * Helper method to get RSA OAEP cipher
      */
     private fun getRSAOAEPCipher(mode: Int, key: Key): Cipher {
-        return try {
-            val cipher = Cipher.getInstance("RSA/ECB/OAEPPadding")
-
-            val oaepParams = OAEPParameterSpec(
-                "SHA-256",
-                "MGF1",
-                MGF1ParameterSpec.SHA1,
-                PSource.PSpecified.DEFAULT
-            )
-
-            cipher.init(mode, key, oaepParams)
-            cipher
-        } catch (e: Exception) {
-            throw RuntimeException("RSA OAEP not supported on this device: ${e.message}", e)
-        }
+        val cipher = Cipher.getInstance("RSA/ECB/OAEPWithSHA-256AndMGF1Padding")
+        val params = OAEPParameterSpec(
+            "SHA-256",
+            "MGF1",
+            MGF1ParameterSpec.SHA256,
+            PSource.PSpecified.DEFAULT
+        )
+        cipher.init(mode, key, params)
+        return cipher
     }
-    
+
     /**
      * Parse enhanced metadata format with JSON-like structure
      * @param messageWithMetadata Message string that may contain enhanced metadata
@@ -584,13 +628,14 @@ class MessageCryptoService(
             mapOf("msg" to messageWithMetadata)
         }
     }
-    
+
     /**
      * Parse old metadata format for backward compatibility
      */
     private fun parseOldMetadataFormat(messageWithMetadata: String): Map<String, Any>? {
         return if (messageWithMetadata.startsWith("META:") && messageWithMetadata.contains(":ENDMETA")) {
-            val metadataString = messageWithMetadata.substring(5, messageWithMetadata.indexOf(":ENDMETA"))
+            val metadataString =
+                messageWithMetadata.substring(5, messageWithMetadata.indexOf(":ENDMETA"))
             val metadata = mutableMapOf<String, Any>()
 
             metadataString.split("|").forEach { pair ->

@@ -1,49 +1,49 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources xmlns:android="http://schemas.android.com/apk/res/android">
-    <color name="purple_200">#FFBB86FC</color>
-    <color name="purple_500">#FF6200EE</color>
-    <color name="purple_700">#FF3700B3</color>
-    <color name="teal_200">#FF03DAC5</color>
-    <color name="teal_700">#FF018786</color>
-    <color name="black">#FF000000</color>
-    <color name="white">#FFFFFFFF</color>
+<resources>
+    <!-- Primary Colors -->
+    <color name="colorPrimary">#27ae60</color>
+    <color name="colorPrimaryDark">#1e8449</color>
+    <color name="colorAccent">#3498db</color>
 
-    <!-- Muut värit -->
-    <color name="green">#27ae60</color>
-    <color name="red">#e74c3c</color>
-    <color name="gray">#95a5a6</color>
+    <!-- Background Colors -->
+    <color name="background_dark">#2A2A2A</color>
+    <color name="card_background">#343444</color>
+    <color name="card_background_light">#2A2A35</color>
 
-    <!-- Perusvärit -->
-    <color name="colorPrimary">#3498db</color>
-    <color name="colorPrimaryDark">#2980b9</color>
-    <color name="colorAccent">#e74c3c</color>
-
-    <!-- Control värit (standardoitu: Vihreä = ON, Punainen = OFF) -->
-    <color name="control_on_primary">#27ae60</color>     <!-- Vihreä - pääväri kun päällä -->
-    <color name="control_on_secondary">#2ecc71</color>   <!-- Vaalempi vihreä - toissijainen -->
-    <color name="control_off_primary">#e74c3c</color>    <!-- Punainen - pääväri kun pois päältä -->
-    <color name="control_off_secondary">#c0392b</color>  <!-- Tumempi punainen - toissijainen -->
-    
-    <!-- Vanhat switch värit (deprecated, käytä control_ värejä) -->
-    <color name="switch_thumb_color_enabled">#27ae60</color>
-    <color name="switch_thumb_color_disabled">#e74c3c</color>
-    <color name="switch_track_color_enabled">#2ecc71</color>
-    <color name="switch_track_color_disabled">#c0392b</color>
-
-    <!-- Taustavärit -->
-    <color name="background_dark">#2c3e50</color>
-    <color name="card_background">#34495e</color>
-
-    <!-- Tekstivärit -->
-    <color name="text_primary">#ffffff</color>
-    <color name="text_secondary">#bdc3c7</color>
-    <color name="text_dark">#2c3e50</color>
+    <!-- Text Colors -->
+    <color name="text_primary">#FFFFFF</color>
+    <color name="text_secondary">#A0A0A0</color>
     <color name="text_hint">#7f8c8d</color>
 
-    <!-- Painikkeiden värit -->
-    <color name="button_success">#27ae60</color>
-    <color name="button_danger">#e74c3c</color>
-    <color name="button_info">#3498db</color>
+    <!-- Button Colors -->
+    <color name="button_primary">#27ae60</color>
+    <color name="button_secondary">#3498db</color>
     <color name="button_warning">#f39c12</color>
-    <color name="button_secondary">#95a5a6</color>
+    <color name="button_danger">#e74c3c</color>
+    <color name="button_info">#8e44ad</color>
+    <color name="button_dark">#34495e</color>
+
+    <!-- Switch and Radio Button Colors -->
+    <color name="switch_thumb_on">#27ae60</color>
+    <color name="switch_thumb_off">#95a5a6</color>
+    <color name="switch_track_on">#27ae6080</color>
+    <color name="switch_track_off">#95a5a680</color>
+
+    <!-- Radio Button State Colors -->
+    <color name="radio_checked">#27ae60</color>
+    <color name="radio_unchecked">#95a5a6</color>
+
+    <!-- Status Colors -->
+    <color name="success">#27ae60</color>
+    <color name="warning">#f39c12</color>
+    <color name="error">#e74c3c</color>
+    <color name="info">#3498db</color>
+
+    <!-- Button Color Aliases for themes.xml compatibility -->
+    <color name="button_success">@color/success</color>
+
+    <!-- Missing color references -->
+    <color name="green">#27ae60</color>
+
 </resources>
+

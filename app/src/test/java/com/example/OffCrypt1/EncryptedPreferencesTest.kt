@@ -88,7 +88,7 @@ class EncryptedPreferencesTest {
         
         // Act
         try {
-            val result = encryptedPreferences.getString(TEST_KEY, "default_value")
+            encryptedPreferences.getString(TEST_KEY, "default_value")
             
             // Assert - Should have queried SharedPreferences
             verify(mockSharedPreferences).getString(TEST_KEY, null)

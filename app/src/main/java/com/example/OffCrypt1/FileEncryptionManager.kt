@@ -1,13 +1,11 @@
 package com.example.OffCrypt1
 
-import android.content.Context
 import android.net.Uri
 import android.provider.OpenableColumns
-import android.util.Base64
 import androidx.appcompat.app.AppCompatActivity
 import java.security.KeyPair
-import java.security.PublicKey
 import java.security.PrivateKey
+import java.security.PublicKey
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -20,7 +18,7 @@ class FileEncryptionManager(
     private val activity: AppCompatActivity,
     private val cryptoManager: CryptoManager
 ) {
-    
+
     /**
      * Gets file name from URI
      */
@@ -82,7 +80,7 @@ class FileEncryptionManager(
     fun createFileMetadata(fileName: String, fileSize: Long): String {
         val timestamp = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date())
         val fileType = getFileType(fileName)
-        
+
         return """
         {
             "filename": "$fileName",
@@ -109,42 +107,34 @@ class FileEncryptionManager(
         }
     }
 
-    /**
-     * Encrypts file with password
-     */
-    fun encryptFileWithPassword(fileData: ByteArray, metadata: String, password: String): ByteArray {
-        return cryptoManager.encryptFileWithPassword(fileData, metadata, password)
-    }
 
-    /**
-     * Encrypts file with RSA
-     */
-    fun encryptFileWithRSA(fileData: ByteArray, metadata: String, recipientPublicKey: PublicKey): ByteArray {
-        return cryptoManager.encryptFileWithRSA(fileData, metadata, recipientPublicKey)
-    }
-    
+
     /**
      * Encrypts file with password and expiration support (ADVANCED METHOD)
      */
-    fun encryptFileWithPasswordAdvanced(fileData: ByteArray, metadata: String, password: String): ByteArray {
+    fun encryptFileWithPasswordAdvanced(
+        fileData: ByteArray,
+        metadata: String,
+        password: String
+    ): ByteArray {
         return cryptoManager.encryptFileWithPasswordAdvanced(fileData, metadata, password)
     }
-    
+
     /**
      * Encrypts file with RSA and expiration support (ADVANCED METHOD)
      */
     fun encryptFileWithRSAAdvanced(
-        fileData: ByteArray, 
-        metadata: String, 
+        fileData: ByteArray,
+        metadata: String,
         recipientPublicKey: PublicKey,
-        userKeyPair: java.security.KeyPair? = null,
+        userKeyPair: KeyPair? = null,
         enablePFS: Boolean = true,
         enableSignatures: Boolean = true,
         expirationTime: Long = 0L
     ): ByteArray {
         return cryptoManager.encryptFileWithRSAAdvanced(
-            fileData, 
-            metadata, 
+            fileData,
+            metadata,
             recipientPublicKey,
             userKeyPair,
             enablePFS,
@@ -156,35 +146,21 @@ class FileEncryptionManager(
     /**
      * Decrypts password-based encrypted file
      */
-    fun decryptFileDataPasswordBased(encryptedData: ByteArray, password: String): Pair<ByteArray, String> {
+    fun decryptFileDataPasswordBased(
+        encryptedData: ByteArray,
+        password: String
+    ): Pair<ByteArray, String> {
         return cryptoManager.decryptFileWithPassword(encryptedData, password)
     }
 
     /**
      * Decrypts RSA-based encrypted file
      */
-    fun decryptFileDataRSA(encryptedData: ByteArray, privateKey: PrivateKey): Pair<ByteArray, String> {
+    fun decryptFileDataRSA(
+        encryptedData: ByteArray,
+        privateKey: PrivateKey
+    ): Pair<ByteArray, String> {
         return cryptoManager.decryptFileWithRSA(encryptedData, privateKey)
-    }
-
-    /**
-     * Parses combined file data and metadata
-     */
-    fun parseFileDataAndMetadata(combinedData: String): Pair<ByteArray, String> {
-        try {
-            val parts = combinedData.split("|METADATA_SEPARATOR|")
-            if (parts.size != 2) {
-                throw IllegalArgumentException("Invalid file data format")
-            }
-
-            val fileDataBase64 = parts[0]
-            val metadata = parts[1]
-            val fileData = Base64.decode(fileDataBase64, Base64.NO_WRAP)
-
-            return Pair(fileData, metadata)
-        } catch (e: Exception) {
-            throw RuntimeException("Failed to parse file data: ${e.message}", e)
-        }
     }
 
     /**
@@ -214,13 +190,4 @@ class FileEncryptionManager(
         } ?: throw RuntimeException("Failed to save encrypted file")
     }
 
-    /**
-     * Saves decrypted file data to URI
-     */
-    fun saveDecryptedData(uri: Uri, fileData: ByteArray) {
-        activity.contentResolver.openOutputStream(uri)?.use { outputStream ->
-            outputStream.write(fileData)
-            outputStream.flush()
-        } ?: throw RuntimeException("Failed to save decrypted file")
-    }
 }

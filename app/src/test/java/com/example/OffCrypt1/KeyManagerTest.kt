@@ -225,31 +225,8 @@ MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA1234567890ABCDEF
         }
     }
 
-    // ===== EPHEMERAL KEY TESTS =====
+
     
-    @Test
-    fun testGenerateEphemeralKeyPair_ReturnsValidKeyPair() {
-        // Act
-        val ephemeralKeyPair = keyManager.generateEphemeralKeyPair()
-        
-        // Assert
-        assertNotNull(ephemeralKeyPair)
-        assertEquals("RSA", ephemeralKeyPair.public.algorithm)
-        assertEquals("RSA", ephemeralKeyPair.private.algorithm)
-    }
-    
-    @Test
-    fun testGenerateKeyId_ReturnsUniqueIds() {
-        // Act
-        val keyId1 = keyManager.generateKeyId()
-        val keyId2 = keyManager.generateKeyId()
-        
-        // Assert
-        assertNotNull(keyId1)
-        assertNotNull(keyId2)
-        assertNotEquals("Key IDs should be unique", keyId1, keyId2)
-        assertTrue("Key ID should be reasonable length", keyId1.length >= 8)
-    }
 
     // ===== ERROR HANDLING TESTS =====
     

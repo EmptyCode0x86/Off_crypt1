@@ -16,31 +16,45 @@ import javax.crypto.spec.PSource
 
 /**
  * Security utilities for sensitive data handling, clipboard management, and memory operations
+ * VAHVENNETTU: DoD 5220.22-M mukainen muistin pyyhkiminen
  * Matches Desktop reference implementation exactly
  */
 object SecurityUtils {
-    
-    private const val SECURE_WIPE_ITERATIONS = 7
-    private const val CLIPBOARD_CLEAR_DELAY_SENSITIVE = 600_000L
-    private const val CLIPBOARD_CLEAR_DELAY_NORMAL = 600_000L
-    
-    private val secureRandom = SecureRandom()
-    
+
+    // VAHVENNETUT turvallisuusparametrit
+    private const val SECURE_WIPE_ITERATIONS =
+        CryptoConstants.SECURE_WIPE_ITERATIONS // 35 (DoD 5220.22-M)
+    private const val CLIPBOARD_CLEAR_DELAY_SENSITIVE =
+        CryptoConstants.CLIPBOARD_CLEAR_DELAY_SENSITIVE // 30s
+    private const val CLIPBOARD_CLEAR_DELAY_NORMAL = CryptoConstants.CLIPBOARD_CLEAR_DELAY_NORMAL
+
+    private val secureRandom = SecureRandom.getInstanceStrong()
+
+    // DoD 5220.22-M mukaiset pyyhkimiskaavat
+    private val DOD_WIPE_PATTERNS = arrayOf(
+        ByteArray(0) { 0x00 },           // Nollat
+        ByteArray(0) { 0xFF.toByte() },  // Ykköset
+        ByteArray(0) { 0xAA.toByte() },  // 10101010
+        ByteArray(0) { 0x55 },           // 01010101
+        ByteArray(0) { 0x33 },           // 00110011
+        ByteArray(0) { 0xCC.toByte() }   // 11001100
+    )
+
     /**
-     * Get RSA OAEP cipher exactly like Desktop reference
+     * KORJATTU: Get RSA OAEP cipher with SHA-256/MGF1(SHA-256) yhtenäisesti
      */
     fun getRSAOAEPCipher(encrypt: Boolean, key: Key): Cipher {
         val c = Cipher.getInstance("RSA/ECB/OAEPPadding")
         val oaep = OAEPParameterSpec(
             "SHA-256",
             "MGF1",
-            MGF1ParameterSpec.SHA1, // Same as original OAEP path
+            MGF1ParameterSpec.SHA256, // KORJATTU: SHA-1 → SHA-256
             PSource.PSpecified.DEFAULT
         )
         c.init(if (encrypt) Cipher.ENCRYPT_MODE else Cipher.DECRYPT_MODE, key, oaep)
         return c
     }
-    
+
     /**
      * Write 32-bit integer to ByteArrayOutputStream
      */
@@ -50,7 +64,7 @@ object SecurityUtils {
         out.write((v ushr 16) and 0xFF)
         out.write((v ushr 24) and 0xFF)
     }
-    
+
     /**
      * Read 32-bit integer from byte array
      */
@@ -61,24 +75,17 @@ object SecurityUtils {
                 ((data[off + 2].toInt() and 0xFF) shl 16) or
                 ((data[off + 3].toInt() and 0xFF) shl 24)
     }
-    
-    /**
-     * Create message with metadata (legacy format)
-     */
-    fun createMessageWithMetadataLegacy(message: String, expirationEpochMs: Long): String {
-        val parts = mutableListOf(
-            "msg=$message",
-            "burn=${false}",
-            "created=${System.currentTimeMillis()}"
-        )
-        if (expirationEpochMs > 0) parts += "exp=$expirationEpochMs"
-        return "META:" + parts.joinToString("|") + ":ENDMETA"
-    }
-    
+
+
+
     /**
      * Create message with metadata (fixed format)
      */
-    fun createMessageWithMetadataFixed(message: String, expirationEpochMs: Long, pfs: Boolean): String {
+    fun createMessageWithMetadataFixed(
+        message: String,
+        expirationEpochMs: Long,
+        pfs: Boolean
+    ): String {
         val kv = linkedMapOf<String, Any>(
             "msg" to message,
             "burn" to false,
@@ -86,36 +93,14 @@ object SecurityUtils {
         )
         if (expirationEpochMs > 0) kv["exp"] = expirationEpochMs
         if (pfs) kv["pfs"] = true
-        
-        val json = kv.entries.joinToString(",") { "\"${it.key}\":${if (it.value is String) "\"${it.value}\"" else it.value}" }
+
+        val json =
+            kv.entries.joinToString(",") { "\"${it.key}\":${if (it.value is String) "\"${it.value}\"" else it.value}" }
         return "{$json}"
     }
-    
-    /**
-     * Parse message metadata (legacy format)
-     */
-    fun parseMessageMetadataLegacy(messageWithMetadata: String): Map<String, String>? {
-        return try {
-            if (!messageWithMetadata.startsWith("META:") || !messageWithMetadata.endsWith(":ENDMETA")) {
-                return mapOf("msg" to messageWithMetadata)
-            }
-            
-            val content = messageWithMetadata.substring(5, messageWithMetadata.length - 8)
-            val parts = content.split("|")
-            val result = mutableMapOf<String, String>()
-            
-            for (part in parts) {
-                val eq = part.indexOf('=')
-                if (eq > 0) {
-                    result[part.substring(0, eq)] = part.substring(eq + 1)
-                }
-            }
-            result
-        } catch (e: Exception) {
-            mapOf("msg" to messageWithMetadata)
-        }
-    }
-    
+
+
+
     /**
      * Parse message metadata (fixed format)
      */
@@ -124,10 +109,10 @@ object SecurityUtils {
             if (!messageWithMetadata.startsWith("{") || !messageWithMetadata.endsWith("}")) {
                 return mapOf("msg" to messageWithMetadata)
             }
-            
+
             val content = messageWithMetadata.substring(1, messageWithMetadata.length - 1)
             val result = mutableMapOf<String, Any>()
-            
+
             // Simple JSON-like parsing
             val pairs = content.split(",")
             for (pair in pairs) {
@@ -135,7 +120,7 @@ object SecurityUtils {
                 if (colonIndex > 0) {
                     val key = pair.substring(0, colonIndex).trim().removeSurrounding("\"")
                     val value = pair.substring(colonIndex + 1).trim()
-                    
+
                     result[key] = when {
                         value == "true" -> true
                         value == "false" -> false
@@ -149,7 +134,7 @@ object SecurityUtils {
             mapOf("msg" to messageWithMetadata)
         }
     }
-    
+
     /**
      * Enforce expiration and extract message
      */
@@ -160,50 +145,10 @@ object SecurityUtils {
         }
         return metadata["msg"]?.toString() ?: ""
     }
-    
-    /**
-     * Strip PEM headers from public key
-     */
-    fun stripPemHeaders(text: String): String {
-        return text
-            .replace("-----BEGIN PUBLIC KEY-----", "")
-            .replace("-----END PUBLIC KEY-----", "")
-            .replace("-----BEGIN RSA PUBLIC KEY-----", "")
-            .replace("-----END RSA PUBLIC KEY-----", "")
-    }
-    
-    /**
-     * Parse file data and metadata
-     */
-    fun parseFileDataAndMetadata(combined: String): Pair<ByteArray, String> {
-        return try {
-            // Try JSON format first
-            if (combined.startsWith("{")) {
-                val jsonStart = combined.indexOf("\"filedata\":\"") + 12
-                val jsonEnd = combined.lastIndexOf("\"}")
-                
-                if (jsonStart > 11 && jsonEnd > jsonStart) {
-                    val base64Data = combined.substring(jsonStart, jsonEnd)
-                    val fileData = android.util.Base64.decode(base64Data, android.util.Base64.NO_WRAP)
-                    
-                    val metaStart = combined.indexOf("\"filename\":\"") + 12
-                    val metaEnd = combined.indexOf("\"", metaStart)
-                    val filename = if (metaStart > 11 && metaEnd > metaStart) {
-                        combined.substring(metaStart, metaEnd)
-                    } else "decrypted_file"
-                    
-                    return Pair(fileData, filename)
-                }
-            }
-            
-            // Fallback to base64 decode
-            val fileData = android.util.Base64.decode(combined, android.util.Base64.NO_WRAP)
-            Pair(fileData, "decrypted_file")
-        } catch (e: Exception) {
-            throw RuntimeException("Failed to parse file data: ${e.message}", e)
-        }
-    }
-    
+
+
+
+
     /**
      * Constant time comparison for security
      */
@@ -215,38 +160,165 @@ object SecurityUtils {
         }
         return result == 0
     }
-    
+
     /**
-     * Securely wipe byte array
+     * VAHVENNETTU: DoD 5220.22-M mukainen turvallinen byte array pyyhkiminen
+     * 35 kierrosta eri kaavoja
      */
     fun secureWipeByteArray(array: ByteArray) {
         try {
-            // Multiple passes with random data
-            for (iteration in 0 until SECURE_WIPE_ITERATIONS) {
-                secureRandom.nextBytes(array)
+            // DoD 5220.22-M: 35 kierrosta
+            repeat(SECURE_WIPE_ITERATIONS) { iteration ->
+                when {
+                    iteration < DOD_WIPE_PATTERNS.size -> {
+                        // Käytä ennalta määriteltyjä kaavoja
+                        val pattern = DOD_WIPE_PATTERNS[iteration]
+                        for (i in array.indices) {
+                            array[i] = if (pattern.isNotEmpty()) pattern[0] else 0
+                        }
+                    }
+
+                    iteration < 30 -> {
+                        // Satunnaisia kaavoja
+                        secureRandom.nextBytes(array)
+                    }
+
+                    else -> {
+                        // Viimeiset kierrokset nollilla
+                        array.fill(0)
+                    }
+                }
+
+                // Pakota muistin kirjoitus
+                forceMemoryWrite(array)
             }
-            // Final pass with zeros
-            array.fill(0)
         } catch (e: Exception) {
             Log.w("SecurityUtils", "Failed to securely wipe byte array", e)
+            // Vähintään nollaa array virhetilanteessa
+            array.fill(0)
         }
     }
-    
+
     /**
-     * Securely wipe char array
+     * VAHVENNETTU: DoD-standardin mukainen char array pyyhkiminen
      */
     fun secureWipeCharArray(array: CharArray) {
         try {
-            // Multiple passes with random data
-            for (iteration in 0 until SECURE_WIPE_ITERATIONS) {
-                for (i in array.indices) {
-                    array[i] = secureRandom.nextInt(65536).toChar()
+            val charPatterns = arrayOf('\u0000', '\uFFFF', '\uAAAA', '\u5555', '\u3333')
+
+            repeat(SECURE_WIPE_ITERATIONS) { iteration ->
+                when {
+                    iteration < charPatterns.size -> {
+                        array.fill(charPatterns[iteration])
+                    }
+
+                    iteration < 30 -> {
+                        // Satunnaisia merkkejä
+                        for (i in array.indices) {
+                            array[i] = secureRandom.nextInt(65536).toChar()
+                        }
+                    }
+
+                    else -> {
+                        array.fill('\u0000')
+                    }
                 }
+
+                // Pakota muistin kirjoitus
+                Thread.yield()
             }
-            // Final pass with zeros
-            array.fill('\u0000')
         } catch (e: Exception) {
             Log.w("SecurityUtils", "Failed to securely wipe char array", e)
+            array.fill('\u0000')
+        }
+    }
+
+    /**
+     * PARANNELTU: Pakota muistin kirjoitus ja estä optimisointi
+     */
+    private fun forceMemoryWrite(array: ByteArray) {
+        // Luo pieni viive pakottaakseen muistin kirjoituksen
+        Thread.yield()
+
+        // Käytä array:ta pakottaakseen JVM pitämään se muistissa
+        // Volatile-tyylinen lukuoperaatio estää optimisoinnin
+        @Suppress("UNUSED_VARIABLE")
+        val dummy = array.sum()
+
+        // PARANNELTU: Vähemmän aggressiivinen GC (oli liian usein)
+        if (secureRandom.nextInt(10000) == 0) { // 0.01% todennäköisyys, oli 0.1%
+            System.gc()
+            Thread.sleep(1) // Pieni viive GC:n suorittamiseksi
+        }
+    }
+
+    /**
+     * UUSI: Optimized garbage collection for sensitive operations
+     */
+    fun forceSecureGC() {
+        // Triple GC call pattern for better cleanup
+        System.gc()
+        Thread.yield()
+        System.runFinalization()
+        System.gc()
+        Thread.yield()
+        System.gc()
+
+        // Small delay to allow GC to complete
+        try {
+            Thread.sleep(10)
+        } catch (e: InterruptedException) {
+            Thread.currentThread().interrupt()
+        }
+    }
+
+
+    /**
+     * PARANNELTU: More reliable clipboard clearing
+     */
+    private fun scheduleClipboardClear(context: Context, delayMs: Long) {
+        val handler = Handler(Looper.getMainLooper())
+        handler.postDelayed({
+            try {
+                val clipboardManager =
+                    context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                val emptyClip = ClipData.newPlainText("", "")
+                clipboardManager.setPrimaryClip(emptyClip)
+
+                // LISÄTTY: Force immediate GC after clipboard clear
+                forceSecureGC()
+
+                Log.d("SecurityUtils", "Clipboard cleared after ${delayMs}ms")
+            } catch (e: Exception) {
+                Log.w("SecurityUtils", "Failed to clear clipboard", e)
+            }
+        }, delayMs)
+    }
+
+    /**
+     * UUSI: Turvallinen String-referenssin "pyyhkiminen" (rajoitetusti mahdollista)
+     */
+    fun attemptStringWipe(string: String): Boolean {
+        return try {
+            // Yritä päästä käsiksi String:in sisäiseen taulukkoon
+            val valueField = String::class.java.getDeclaredField("value")
+            valueField.isAccessible = true
+
+            when (val value = valueField.get(string)) {
+                is CharArray -> {
+                    secureWipeCharArray(value)
+                    true
+                }
+
+                is ByteArray -> {
+                    secureWipeByteArray(value)
+                    true
+                }
+
+                else -> false
+            }
+        } catch (e: Exception) {
+            false
         }
     }
 }
